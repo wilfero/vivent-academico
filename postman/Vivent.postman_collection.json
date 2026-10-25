@@ -7,7 +7,13 @@
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080" },
     { "key": "tenantSlug", "value": "demo" },
-    { "key": "accessToken", "value": "" }
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "branchId", "value": "" },
+    { "key": "purchaseId", "value": "" },
+    { "key": "saleId", "value": "" },
+    { "key": "transferId", "value": "" },
+    { "key": "transferDetailId", "value": "" }
   ],
   "auth": {
     "type": "bearer",
@@ -52,6 +58,51 @@
         {
           "name": "Sesión actual (/auth/me)",
           "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/auth/me" }
+        },
+        {
+          "name": "Refresh token (renovar sesión)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/refresh",
+            "description": "Devuelve un nuevo access + refresh (rotación: el token presentado queda revocado). Cargar la variable de colección {{refreshToken}} con el valor devuelto por el login."
+          }
+        },
+        {
+          "name": "Refresh token (error: token revocado)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"token-invalido\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/refresh",
+            "description": "Error esperado: 401 INVALID_TOKEN."
+          }
+        },
+        {
+          "name": "Logout (revocar refresh)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/logout",
+            "description": "Revoca el refresh token y registra auditoría LOGOUT."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integración externa",
+      "item": [
+        {
+          "name": "Lookup externo por barcode (éxito)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/barcode-lookup/3017620422003" },
+          "description": "Open Food Facts (integración externa). Ejemplo conocido: Nutella. Devuelve found=true con nombre/marca."
+        },
+        {
+          "name": "Lookup externo por barcode (no encontrado)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/barcode-lookup/0000000000000" },
+          "description": "Devuelve found=false y message explicativo (éxito de API, sin producto)."
         }
       ]
     },

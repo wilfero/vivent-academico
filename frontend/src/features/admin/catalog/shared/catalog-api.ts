@@ -88,3 +88,21 @@ export function deactivatePresentation(productId: string, presentationId: string
 export function lookupBarcode(barcode: string) {
   return apiRequest<BarcodeLookup>(`/api/v1/products/by-barcode/${encodeURIComponent(barcode)}`, { authenticated: true });
 }
+
+/** External catalog fallback (Open Food Facts) for unknown scanned barcodes. */
+export function lookupExternalBarcode(barcode: string) {
+  return apiRequest<ExternalBarcodeLookup>(`/api/v1/products/barcode-lookup/${encodeURIComponent(barcode)}`, {
+    authenticated: true,
+  });
+}
+
+export type ExternalBarcodeLookup = {
+  barcode: string;
+  source: string;
+  found: boolean;
+  name: string | null;
+  brand: string | null;
+  quantityText: string | null;
+  imageUrl: string | null;
+  message: string | null;
+};

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { getMillisecondsUntilExpiration, getStoredSessionSnapshot, SESSION_CHANGE_EVENT, type StoredSession } from "@/features/auth/lib/session-storage";
-import { logout } from "@/features/auth/lib/auth-client";
+import { logout, refreshSession } from "@/features/auth/lib/auth-client";
 
 function subscribeToSessionChanges(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
@@ -56,10 +56,21 @@ export function useRequireSession() {
       return;
     }
 
-    const timeout = window.setTimeout(() => {
-      logout();
-      router.replace("/login?expired=1");
-    }, getMillisecondsUntilExpiration(session));
+    // Proactive refresh token renewal: one minute before the access token
+    // expires, renew the session. The store event re-runs this effect with
+    // the new expiry, chaining renewals while the user stays active. If the
+    // refresh token is also invalid, the session ends and the user is sent
+    // back to the login screen.
+    const msUntilRenewal = Math.max(getMillisecondsUntilExpiration(session) - 60_000, 0);
+
+    const timeout = window.setTimeout(async () => {
+      const renewed = await refreshSession();
+
+      if (!renewed) {
+        await logout();
+        router.replace("/login?expired=1");
+      }
+    }, msUntilRenewal);
 
     return () => window.clearTimeout(timeout);
   }, [isHydrated, router, session]);

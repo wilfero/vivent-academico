@@ -77,6 +77,11 @@ Contraseña compartida: `ChangeMe123!`
 | `transfers_destination` | WAREHOUSE_USER |
 | `auditor` | AUDITOR |
 
+## Contractos de utilidad
+
+- `common/util/RequestMetadata.java` centraliza la captura de IP (con soporte `X-Forwarded-For`) y User-Agent para auditoría de sesiones.
+- `database/bootstrap_demo.py` genera operaciones demo (compras, ventas, traslado, ajuste, cierre) vía API real tras el primer arranque.
+
 ## Documentación
 
 - [`docs/MATRIZ_CUMPLIMIENTO_DESARROLLO_WEB.md`](docs/MATRIZ_CUMPLIMIENTO_DESARROLLO_WEB.md) — cumplimiento requisito por requisito

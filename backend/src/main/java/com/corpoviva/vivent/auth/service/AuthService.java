@@ -1,5 +1,7 @@
 package com.corpoviva.vivent.auth.service;
 
+import com.corpoviva.vivent.audit.entity.AuditAction;
+import com.corpoviva.vivent.audit.service.AuditLogService;
 import com.corpoviva.vivent.auth.dto.LoginRequest;
 import com.corpoviva.vivent.auth.dto.LoginResponse;
 import com.corpoviva.vivent.common.exception.ApiException;
@@ -33,6 +35,8 @@ public class AuthService {
 	private final PermissionResolutionService permissionResolutionService;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
+	private final RefreshTokenService refreshTokenService;
+	private final AuditLogService auditLogService;
 
 	public AuthService(
 		CompanyRepository companyRepository,
@@ -40,7 +44,9 @@ public class AuthService {
 		SubscriptionRepository subscriptionRepository,
 		PermissionResolutionService permissionResolutionService,
 		PasswordEncoder passwordEncoder,
-		JwtService jwtService
+		JwtService jwtService,
+		RefreshTokenService refreshTokenService,
+		AuditLogService auditLogService
 	) {
 		this.companyRepository = companyRepository;
 		this.userRepository = userRepository;
@@ -48,10 +54,12 @@ public class AuthService {
 		this.permissionResolutionService = permissionResolutionService;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
+		this.refreshTokenService = refreshTokenService;
+		this.auditLogService = auditLogService;
 	}
 
 	@Transactional
-	public LoginResponse login(LoginRequest request) {
+	public LoginResponse login(LoginRequest request, String ipAddress, String userAgent) {
 		CompanyEntity company = loadTenant(request.tenantSlug());
 		validateCompany(company);
 		validateSubscription(company.getId());
@@ -66,15 +74,49 @@ public class AuthService {
 		}
 
 		user.setLastLoginAt(Instant.now());
-		return issueSession(user);
+
+		AuthenticatedUser authenticatedUser = buildAuthenticatedUser(user, user.getCompany().getTenantSlug(), null);
+		JwtService.IssuedToken issuedToken = jwtService.issueToken(authenticatedUser);
+		AuthenticatedUser authenticatedUserWithExpiry = buildAuthenticatedUser(
+			user,
+			user.getCompany().getTenantSlug(),
+			issuedToken.expiresAt()
+		);
+		RefreshTokenService.IssuedRefreshToken issuedRefreshToken = refreshTokenService.issue(user, ipAddress, userAgent);
+
+		auditLogService.log(authenticatedUserWithExpiry, AuditAction.LOGIN, "user", user.getId(), null, null);
+
+		return LoginResponse.from(
+			issuedToken.token(),
+			issuedToken.expiresAt(),
+			issuedRefreshToken.refreshToken(),
+			issuedRefreshToken.expiresAt(),
+			authenticatedUserWithExpiry
+		);
 	}
 
 	@Transactional(readOnly = true)
-	public LoginResponse renewSession(UserEntity user) {
+	public LoginResponse renewSession(UserEntity user, String ipAddress, String userAgent) {
 		validateCompany(user.getCompany());
 		validateSubscription(user.getCompany().getId());
 		validateUserAccess(user);
-		return issueSession(user);
+
+		AuthenticatedUser authenticatedUser = buildAuthenticatedUser(user, user.getCompany().getTenantSlug(), null);
+		JwtService.IssuedToken issuedToken = jwtService.issueToken(authenticatedUser);
+		AuthenticatedUser authenticatedUserWithExpiry = buildAuthenticatedUser(
+			user,
+			user.getCompany().getTenantSlug(),
+			issuedToken.expiresAt()
+		);
+		RefreshTokenService.IssuedRefreshToken issuedRefreshToken = refreshTokenService.issue(user, ipAddress, userAgent);
+
+		return LoginResponse.from(
+			issuedToken.token(),
+			issuedToken.expiresAt(),
+			issuedRefreshToken.refreshToken(),
+			issuedRefreshToken.expiresAt(),
+			authenticatedUserWithExpiry
+		);
 	}
 
 	@Transactional(readOnly = true)
@@ -157,18 +199,6 @@ public class AuthService {
 		if (parsedToken.authVersion() != user.getAuthVersion()) {
 			throw ApiException.unauthorized(ErrorCode.INVALID_TOKEN, "Token was revoked");
 		}
-	}
-
-	private LoginResponse issueSession(UserEntity user) {
-		AuthenticatedUser authenticatedUser = buildAuthenticatedUser(user, user.getCompany().getTenantSlug(), null);
-		JwtService.IssuedToken issuedToken = jwtService.issueToken(authenticatedUser);
-		AuthenticatedUser authenticatedUserWithExpiry = buildAuthenticatedUser(
-			user,
-			user.getCompany().getTenantSlug(),
-			issuedToken.expiresAt()
-		);
-
-		return LoginResponse.from(issuedToken.token(), issuedToken.expiresAt(), authenticatedUserWithExpiry);
 	}
 
 	private AuthenticatedUser buildAuthenticatedUser(UserEntity user, String tenantSlug, Instant tokenExpiresAt) {

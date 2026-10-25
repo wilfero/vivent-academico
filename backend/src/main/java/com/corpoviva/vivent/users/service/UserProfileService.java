@@ -4,6 +4,7 @@ import com.corpoviva.vivent.audit.entity.AuditAction;
 import com.corpoviva.vivent.audit.service.AuditLogService;
 import com.corpoviva.vivent.auth.dto.LoginResponse;
 import com.corpoviva.vivent.auth.service.AuthService;
+import com.corpoviva.vivent.auth.service.RefreshTokenService;
 import com.corpoviva.vivent.common.exception.ApiException;
 import com.corpoviva.vivent.common.exception.ErrorCode;
 import com.corpoviva.vivent.security.AuthenticatedUser;
@@ -23,17 +24,20 @@ public class UserProfileService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final AuthService authService;
+	private final RefreshTokenService refreshTokenService;
 	private final AuditLogService auditLogService;
 
 	public UserProfileService(
 		UserRepository userRepository,
 		PasswordEncoder passwordEncoder,
 		AuthService authService,
+		RefreshTokenService refreshTokenService,
 		AuditLogService auditLogService
 	) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.authService = authService;
+		this.refreshTokenService = refreshTokenService;
 		this.auditLogService = auditLogService;
 	}
 
@@ -64,7 +68,12 @@ public class UserProfileService {
 	}
 
 	@Transactional
-	public LoginResponse changePassword(AuthenticatedUser authenticatedUser, ChangeOwnPasswordRequest request) {
+	public LoginResponse changePassword(
+		AuthenticatedUser authenticatedUser,
+		ChangeOwnPasswordRequest request,
+		String ipAddress,
+		String userAgent
+	) {
 		UserEntity user = loadCurrentUser(authenticatedUser);
 
 		if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
@@ -79,6 +88,10 @@ public class UserProfileService {
 		user.setMustChangePassword(false);
 		user.setAuthVersion(user.getAuthVersion() + 1);
 
+		// Password changes invalidate every live refresh token; the response
+		// carries a brand-new access + refresh pair.
+		refreshTokenService.revokeAllForUser(user.getId());
+
 		auditLogService.log(
 			authenticatedUser,
 			AuditAction.UPDATE,
@@ -88,7 +101,7 @@ public class UserProfileService {
 			"{\"selfService\":true,\"authVersion\":" + user.getAuthVersion() + "}"
 		);
 
-		return authService.renewSession(user);
+		return authService.renewSession(user, ipAddress, userAgent);
 	}
 
 	private UserEntity loadCurrentUser(AuthenticatedUser authenticatedUser) {

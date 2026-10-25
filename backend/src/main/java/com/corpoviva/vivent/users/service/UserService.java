@@ -56,6 +56,7 @@ public class UserService {
 	private final UserBranchAssignmentRepository userBranchAssignmentRepository;
 	private final SubscriptionPolicyService subscriptionPolicyService;
 	private final PasswordEncoder passwordEncoder;
+	private final com.corpoviva.vivent.auth.service.RefreshTokenService refreshTokenService;
 
 	public UserService(
 		UserRepository userRepository,
@@ -66,7 +67,8 @@ public class UserService {
 		PermissionResolutionService permissionResolutionService,
 		UserBranchAssignmentRepository userBranchAssignmentRepository,
 		SubscriptionPolicyService subscriptionPolicyService,
-		PasswordEncoder passwordEncoder
+		PasswordEncoder passwordEncoder,
+		com.corpoviva.vivent.auth.service.RefreshTokenService refreshTokenService
 	) {
 		this.userRepository = userRepository;
 		this.branchRepository = branchRepository;
@@ -77,6 +79,7 @@ public class UserService {
 		this.userBranchAssignmentRepository = userBranchAssignmentRepository;
 		this.subscriptionPolicyService = subscriptionPolicyService;
 		this.passwordEncoder = passwordEncoder;
+		this.refreshTokenService = refreshTokenService;
 	}
 
 	@Transactional(readOnly = true)
@@ -169,6 +172,7 @@ public class UserService {
 		if (request.password() != null && !request.password().isBlank()) {
 			user.setPasswordHash(passwordEncoder.encode(request.password()));
 			user.setAuthVersion(user.getAuthVersion() + 1);
+			refreshTokenService.revokeAllForUser(user.getId());
 		}
 
 		applyPermissionOverrides(user, request.permissionOverrides());
@@ -221,6 +225,7 @@ public class UserService {
 		ensureUserNotDeleted(user);
 		user.setPasswordHash(passwordEncoder.encode(request.password()));
 		user.setAuthVersion(user.getAuthVersion() + 1);
+		refreshTokenService.revokeAllForUser(user.getId());
 		return UserResponse.from(user, permissionResolutionService.resolvePermissions(user));
 	}
 

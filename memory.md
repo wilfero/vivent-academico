@@ -27,11 +27,11 @@ Reglas de uso: registrar aquí hechos críticos, decisiones y pendientes por tar
 ## Estado del cumplimiento (resumen)
 
 - ✅ Autenticación backend, roles/permisos en API, dashboard real, 11+ módulos, 3 procesos integrados, consultas con filtros, 9 reportes con exportación, validaciones FE+BE, seguridad (BCrypt, parametrizadas, soft-delete, trazabilidad).
-- ❌ Refresh token: **no implementado** (solo access JWT + authVersion) → pendiente crítico.
-- ⚠️ APIs externas: Photon activa; nabrix-email con contrato pendiente de activación; WhatsApp diseñado (fase 6). Se requiere activar/demos por integrante.
-- ⚠️ Datos de prueba: <5 por catálogo → seed académico expandido pendiente.
-- ⚠️ Publicación en la nube académica: pendiente (Neon/Railway/Render + Vercel).
-- ⚠️ Colección Postman, manual técnico, manual de usuario, matriz de responsabilidades, evidencias: por completar.
+- ✅ **Refresh token implementado** (2026-10-25): migración `V20261026000000__create_refresh_tokens.sql`, endpoint `POST /api/v1/auth/refresh` con rotación, `POST /api/v1/auth/logout` con auditoría LOGOUT, tokens opacos hasheados (SHA-256), revocación total al cambiar/resetear contraseña, renewSession(user, ip, ua) en cambio de contraseña propio; frontend con renovación proactiva (1 min antes de expirar) + reactiva (401 INVALID_TOKEN, single-flight) en `src/lib/api/http.ts`.
+- ✅ **Catálogos con ≥5 registros** (2026-10-25): seed `S20261026000001__seed_academic_demo_data.sql` (5 categorías, 4 proveedores extra=5 total, 4 clientes extra=5 total, 5 productos nuevos con 10 presentaciones y barcodes únicos; unidades 8 de V010).
+- ✅ **3 APIs externas activas** (2026-10-25): Photon (integrada, con caché y fallback), Open Food Facts (nueva: backend + diálogo de registro rápido en el POS), Nabrix Email (contrato implementado con outbox/reintentos; activación con credenciales de prueba).
+- ✅ **Documentación completa**: `DOCUMENTO_PROYECTO.md` (+pdf, 4 págs: negocio, problema, objetivos, alcance, 6 módulos, 30 reglas, matriz de responsabilidades, procesos), `MANUAL_TECNICO.md` (+pdf), `MANUAL_USUARIO.md` (+pdf), `APIS_EXTERNAS.md`, `PUBLICACION_CLOUD.md`, `RequestMetadata.java`.
+- ⚠️ Pendiente operativo del equipo: correr `./mvnw test` en una PC con Docker Desktop (Testcontainers requiere el daemon; en la PC de desarrollo el daemon estaba apagado), smoke del despliegue en la nube (Neon/Render/Vercel) y commits de los tres integrantes.
 
 ## Pendientes por tarea
 
@@ -49,5 +49,9 @@ Reglas de uso: registrar aquí hechos críticos, decisiones y pendientes por tar
 | Fecha | Tarea | Archivo/resultado |
 | --- | --- | --- |
 | 2026-10-25 | Análisis de requisitos vs repos (lectura del DOCX, verificación en `origin/dev`) | `docs/MATRIZ_CUMPLIMIENTO_DESARROLLO_WEB.md` |
-| 2026-10-25 | Scaffolding del repo académico y archivo de agentes | `AGENTS.md`, `SKILL.md`, `memory.md`, `.env.example`, `docker/`, `postman/` |
+| 2026-10-25 | Scaffolding del repo académico y archivos de agentes | `AGENTS.md`, `SKILL.md`, `memory.md`, `.env.example`, `docker/`, `postman/` |
 | 2026-10-25 | Documento de justificación de stack para el docente | `docs/JUSTIFICACION_STACK_SPRING_BOOT.md` |
+| 2026-10-25 | **Implementación refresh token** (backend + frontend) | migración + endpoints + RequestMetadata + auto-renewal; `mvnw compile` BUILD SUCCESS, `tsc --noEmit` OK |
+| 2026-10-25 | **Seed académico ≥5 por catálogo** | `S20261026000001__seed_academic_demo_data.sql` |
+| 2026-10-25 | **Documentos del curso** | `DOCUMENTO_PROYECTO.md`+pdf, `MANUAL_TECNICO.md`+pdf, `MANUAL_USUARIO.md`+pdf, `APIS_EXTERNAS.md`, `PUBLICACION_CLOUD.md` |
+| 2026-10-25 | Colección Postman completa con refresh/logout + integración externa | `postman/Vivent.postman_collection.json` |

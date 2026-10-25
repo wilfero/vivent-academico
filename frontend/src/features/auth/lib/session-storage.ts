@@ -28,14 +28,10 @@ export function getStoredSession(): StoredSession | null {
   if (!rawSession) return null;
 
   try {
-    const session = JSON.parse(rawSession) as StoredSession;
-
-    if (isSessionExpired(session)) {
-      clearSession();
-      return null;
-    }
-
-    return session;
+    // An expired access token does not end the session: the HTTP client
+    // renews it transparently with the refresh token. Only malformed data
+    // is discarded here.
+    return JSON.parse(rawSession) as StoredSession;
   } catch {
     clearSession();
     return null;
@@ -49,6 +45,10 @@ export function getStoredSessionSnapshot() {
 
 export function getStoredAccessToken() {
   return getStoredSession()?.accessToken ?? null;
+}
+
+export function getStoredRefreshToken() {
+  return getStoredSession()?.refreshToken ?? null;
 }
 
 export function isSessionExpired(session: Pick<StoredSession, "expiresAt">) {

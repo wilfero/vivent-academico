@@ -50,6 +50,7 @@ public class PlatformCompanyService {
 	private final PlatformPlanRepository platformPlanRepository;
 	private final PlatformAuditService platformAuditService;
 	private final PasswordEncoder passwordEncoder;
+	private final com.corpoviva.vivent.auth.service.RefreshTokenService refreshTokenService;
 
 	public PlatformCompanyService(
 		CompanyRepository companyRepository,
@@ -59,7 +60,8 @@ public class PlatformCompanyService {
 		ProductRepository productRepository,
 		PlatformPlanRepository platformPlanRepository,
 		PlatformAuditService platformAuditService,
-		PasswordEncoder passwordEncoder
+		PasswordEncoder passwordEncoder,
+		com.corpoviva.vivent.auth.service.RefreshTokenService refreshTokenService
 	) {
 		this.companyRepository = companyRepository;
 		this.subscriptionRepository = subscriptionRepository;
@@ -69,6 +71,7 @@ public class PlatformCompanyService {
 		this.platformPlanRepository = platformPlanRepository;
 		this.platformAuditService = platformAuditService;
 		this.passwordEncoder = passwordEncoder;
+		this.refreshTokenService = refreshTokenService;
 	}
 
 	@Transactional(readOnly = true)
@@ -250,6 +253,7 @@ public class PlatformCompanyService {
 		admin.setPasswordHash(passwordEncoder.encode(newPassword));
 		admin.setMustChangePassword(true);
 		admin.setAuthVersion(admin.getAuthVersion() + 1);
+		refreshTokenService.revokeAllForUser(admin.getId());
 
 		platformAuditService.log(
 			operatorId,

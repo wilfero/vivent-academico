@@ -42,8 +42,14 @@ public class UserProfileController {
 	@PostMapping("/password")
 	public ApiResponse<LoginResponse> changePassword(
 		@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-		@Valid @RequestBody ChangeOwnPasswordRequest request
+		@Valid @RequestBody ChangeOwnPasswordRequest request,
+		jakarta.servlet.http.HttpServletRequest httpRequest
 	) {
-		return ApiResponse.success(userProfileService.changePassword(authenticatedUser, request));
+		return ApiResponse.success(userProfileService.changePassword(
+			authenticatedUser,
+			request,
+			com.corpoviva.vivent.common.util.RequestMetadata.clientIp(httpRequest),
+			com.corpoviva.vivent.common.util.RequestMetadata.userAgent(httpRequest)
+		));
 	}
 }

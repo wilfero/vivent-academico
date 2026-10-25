@@ -13,7 +13,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { FormDialog } from "@/components/ui/form-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { listGlobalPresentations, listProducts, lookupBarcode } from "@/features/admin/catalog/shared/catalog-api";
+import {
+  createPresentation,
+  createProduct,
+  listGlobalPresentations,
+  listProducts,
+  listUnits,
+  lookupBarcode,
+  lookupExternalBarcode,
+  type ExternalBarcodeLookup,
+} from "@/features/admin/catalog/shared/catalog-api";
 import type { ProductPresentation } from "@/features/admin/catalog/shared/catalog-types";
 import { canAny } from "@/features/admin/catalog/shared/catalog-permissions";
 import { listBranches } from "@/features/admin/shared/admin-api";
@@ -55,6 +64,10 @@ export function SalePosScreen() {
   const [customerAddress, setCustomerAddress] = useState("CIUDAD");
   const [missingCustomerTaxId, setMissingCustomerTaxId] = useState("");
   const [pendingItem, setPendingItem] = useState<PendingCartItem | null>(null);
+  const [externalProduct, setExternalProduct] = useState<ExternalBarcodeLookup | null>(null);
+  const [externalName, setExternalName] = useState("");
+  const [externalSalePrice, setExternalSalePrice] = useState("");
+  const [externalUnitCode, setExternalUnitCode] = useState("unit");
   const cartEndRef = useRef<HTMLDivElement | null>(null);
   const canCreate = canCreateSales();
   const canLookupProducts = canLookupSaleProducts();
@@ -66,6 +79,8 @@ export function SalePosScreen() {
   const canReadCustomers = canAny(["customers.view"]);
   const canCreateCustomers = canAny(["customers.create"]);
   const canViewCombos = canAny(["combos.view"]);
+  const canCreateProducts = canAny(["products.create"]);
+  const canViewUnits = canAny(["units.view"]);
 
   const form = useForm<SaleCreateInput, unknown, SaleCreateForm>({ resolver: zodResolver(saleCreateSchema), defaultValues: defaultSaleCreateValues, reValidateMode: "onBlur" });
   const { fields, append, remove, update } = useFieldArray({ control: form.control, name: "details" });
@@ -87,6 +102,7 @@ export function SalePosScreen() {
   });
   const customersQuery = useQuery({ queryKey: ["sales", "customers"], queryFn: () => listCustomers("", true), enabled: canCreate && canReadCustomers });
   const combosQuery = useQuery({ queryKey: ["sales", "combos"], queryFn: () => listCombos({ page: 1, pageSize: 100, active: true, query: "" }), enabled: canCreate && canViewCombos });
+  const unitsQuery = useQuery({ queryKey: ["sales", "units"], queryFn: () => listUnits(), enabled: canCreateProducts && canViewUnits && externalProduct != null });
 
   const branchOptions = useMemo(() => withSessionBranchFallback((branchesQuery.data?.items ?? []).map((branch) => ({ value: branch.id, label: branch.name }))), [branchesQuery.data?.items]);
   const productById = useMemo(() => new Map((productsQuery.data?.items ?? []).map((product) => [product.id, product])), [productsQuery.data?.items]);
@@ -221,11 +237,88 @@ export function SalePosScreen() {
           }
           queryClient.invalidateQueries({ queryKey: ["sales", "combos"] });
         }).catch(() => {
-          toast.error(formatErrorMessage(error, t));
+          offerExternalProduct(value, error);
         });
       } else {
-        toast.error(formatErrorMessage(error, t));
+        offerExternalProduct(value, error);
       }
+    },
+  });
+
+  function offerExternalProduct(value: string, originalError: unknown) {
+    // Third-party integration fallback: when the local catalog does not know
+    // the barcode, ask the external catalog (Open Food Facts). If it is
+    // found there, offer to register the product and keep selling.
+    if (!canCreateProducts) {
+      toast.error(formatErrorMessage(originalError, t));
+      return;
+    }
+
+    lookupExternalBarcode(value).then((external) => {
+      if (external?.found && external.name) {
+        setExternalProduct(external);
+        setExternalName(external.name);
+        setExternalSalePrice("");
+        setExternalUnitCode("unit");
+        return;
+      }
+      toast.error(formatErrorMessage(originalError, t));
+    }).catch(() => {
+      toast.error(formatErrorMessage(originalError, t));
+    });
+  }
+
+  const externalProductMutation = useMutation({
+    mutationFn: async () => {
+      const salePrice = Number(externalSalePrice.replace(",", "."));
+      if (!externalName.trim() || Number.isNaN(salePrice) || salePrice < 0) {
+        throw new Error("invalid");
+      }
+
+      const product = await createProduct({
+        name: externalName.trim(),
+        description: externalProduct?.brand ? `Marca: ${externalProduct.brand}` : null,
+        baseUnitCode: externalUnitCode || "unit",
+        sku: null,
+        minimumStock: 0,
+        stockable: true,
+        hasExpirationDate: false,
+        hasLotTracking: false,
+        hasSerialTracking: false,
+        active: true,
+        categoryId: null,
+      });
+
+      return createPresentation(product.id, {
+        name: "Unidad",
+        barcode: externalProduct?.barcode ?? null,
+        conversionFactor: 1,
+        purchasePriceSuggested: 0,
+        salePrice,
+        defaultPurchase: true,
+        defaultSale: true,
+        active: true,
+      });
+    },
+    onSuccess: (presentation) => {
+      queryClient.invalidateQueries({ queryKey: ["sales", "products"] });
+      queryClient.invalidateQueries({ queryKey: ["sales", "presentations"] });
+      setExternalProduct(null);
+      setBarcode("");
+      focusBarcodeInput();
+      const appended = appendPresentation(presentation, presentation.barcode ?? "");
+      if (appended) {
+        toast.success(t("sales.messages.itemAdded"));
+      } else {
+        toast.success(t("sales.messages.itemAdded"));
+      }
+    },
+    onError: (error) => {
+      if ((error as Error).message === "invalid") {
+        toast.error(t("sales.externalProduct.invalidFields"));
+        return;
+      }
+      toast.error(formatErrorMessage(error, t));
     },
   });
 
@@ -628,6 +721,34 @@ export function SalePosScreen() {
             <div className="space-y-2"><Label>{t("admin.fields.address")}</Label><Input value={customerAddress} onChange={(event) => setCustomerAddress(event.target.value)} placeholder="CIUDAD" /></div>
             <div className="flex flex-wrap justify-end gap-2 md:col-span-2"><Button type="button" variant="outline" onClick={() => setMissingCustomerTaxId("")}>{t("sales.customer.changeTaxId")}</Button><Button type="button" disabled={!customerName.trim() || createCustomerMutation.isPending || !canCreateCustomers} onClick={createMissingCustomer}>{t("sales.customer.createAndContinue")}</Button></div>
           </div>}
+        </div>
+      </FormDialog>
+
+      <FormDialog open={externalProduct != null} onOpenChange={(open) => { if (!open) setExternalProduct(null); }} title={t("sales.externalProduct.title")} description={t("sales.externalProduct.description")}>
+        <div className="space-y-4">
+          <div className="rounded-2xl border bg-muted/35 p-3 text-sm">
+            <p className="font-bold">{externalProduct?.name}</p>
+            {externalProduct?.brand ? <p className="mt-1 text-xs text-muted-foreground">{externalProduct.brand}</p> : null}
+            {externalProduct?.quantityText ? <p className="text-xs text-muted-foreground">{externalProduct.quantityText}</p> : null}
+            <p className="mt-1 text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground">{t("sales.externalProduct.source")}</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2"><Label>{t("admin.fields.name")}</Label><Input autoFocus value={externalName} onChange={(event) => setExternalName(event.target.value)} /></div>
+            <div className="space-y-2"><Label>{t("sales.externalProduct.salePrice")}</Label><Input inputMode="decimal" value={externalSalePrice} onChange={(event) => setExternalSalePrice(event.target.value)} placeholder="0.00" /></div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>{t("sales.externalProduct.baseUnit")}</Label>
+              <select className="w-full rounded-xl border bg-background px-3 py-2 text-sm outline-none" value={externalUnitCode} onChange={(event) => setExternalUnitCode(event.target.value)}>
+                {(canViewUnits ? unitsQuery.data ?? [] : []).map((unit) => (
+                  <option key={unit.code} value={unit.code}>{unit.name}</option>
+                ))}
+                {!canViewUnits ? <option value="unit">Unit</option> : null}
+              </select>
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setExternalProduct(null)}>{t("admin.actions.cancel")}</Button>
+            <Button type="button" disabled={externalProductMutation.isPending} onClick={() => externalProductMutation.mutate()}>{t("sales.externalProduct.registerAndAdd")}</Button>
+          </div>
         </div>
       </FormDialog>
 

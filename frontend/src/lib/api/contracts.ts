@@ -39,6 +39,8 @@ export type LoginResponse = {
   accessToken: string;
   tokenType: string;
   expiresAt: string;
+  refreshToken: string;
+  refreshExpiresAt: string;
   companyId: string;
   branchId: string;
   branchName?: string;
@@ -50,7 +52,10 @@ export type LoginResponse = {
   mustChangePassword: boolean;
 };
 
-export type CurrentSession = Omit<LoginResponse, "accessToken" | "tokenType">;
+export type CurrentSession = Omit<
+  LoginResponse,
+  "accessToken" | "tokenType" | "refreshToken" | "refreshExpiresAt"
+>;
 
 export type UserProfile = {
   id: string;

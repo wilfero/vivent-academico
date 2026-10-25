@@ -9,6 +9,8 @@ public record LoginResponse(
 	String accessToken,
 	String tokenType,
 	Instant expiresAt,
+	String refreshToken,
+	Instant refreshExpiresAt,
 	UUID companyId,
 	UUID branchId,
 	String branchName,
@@ -20,11 +22,19 @@ public record LoginResponse(
 	boolean mustChangePassword
 ) {
 
-	public static LoginResponse from(String accessToken, Instant expiresAt, AuthenticatedUser authenticatedUser) {
+	public static LoginResponse from(
+		String accessToken,
+		Instant expiresAt,
+		String refreshToken,
+		Instant refreshExpiresAt,
+		AuthenticatedUser authenticatedUser
+	) {
 		return new LoginResponse(
 			accessToken,
 			"Bearer",
 			expiresAt,
+			refreshToken,
+			refreshExpiresAt,
 			authenticatedUser.companyId(),
 			authenticatedUser.branchId(),
 			authenticatedUser.branchName(),
