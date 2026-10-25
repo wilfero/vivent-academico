@@ -711,9 +711,7 @@ Las evidencias de estas corridas están en `docs/evidencias/evidencias_pruebas.m
 - `postman/Vivent.postman_collection.json` — colección con 128 requests (CRUD completo).
 - `postman/Vivent-Local.postman_environment.json` — environment con URL y credenciales demo.
 - `postman/README.md` — instalación, orden de ejecución y tabla de variables.
-- `GUIA_EXPOSICION_CHRISTIAN.md` — guion, Postman, código y rúbrica del integrante 1.
-- `GUIA_EXPOSICION_WILFERO.md` — guion, Postman, código y rúbrica del integrante 2.
-- `GUIA_EXPOSICION_FERNANDO.md` — guion, Postman, código y rúbrica del integrante 3.
+- Guías individuales de exposición — un documento por integrante con su rol, guion, requests de Postman, código a señalar, reportes, API externa y checklist de rúbrica. **Se entregan por separado**; no forman parte de este compendio.
 
 ---
 
