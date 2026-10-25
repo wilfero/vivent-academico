@@ -38,31 +38,31 @@ pre { white-space: pre-wrap; }
 
 ## Índice
 
-| # | Sección |
-| --- | --- |
-| 1 | Negocio y giro |
-| 2 | Problema |
-| 3 | Objetivos |
-| 4 | Alcance |
-| 5 | Los seis módulos del negocio |
-| 6 | Reglas del negocio (30) |
-| 7 | Diseño del sistema |
-| 7.1 | Modelo conceptual |
-| 7.2 | Modelo de datos físico |
-| 7.3 | Arquitectura |
-| 7.4 | Flujos de los tres procesos integrados |
-| 8 | Matriz de responsabilidades |
-| 9 | Stack tecnológico y equivalencia |
-| 10 | Repositorio, Docker y publicación |
-| 11 | API, colección Postman y CRUD |
-| 11.1 | Instalación de la colección |
-| 11.2 | Variables de la colección |
-| 11.3 | Estructura de la colección |
-| 11.4 | Matriz CRUD por recurso |
-| 11.5 | Corrida encadenada de una prueba completa |
-| 11.6 | Errores controlados y resultado de la corrida |
-| 12 | Anexos |
-| 13 | Rúbrica |
+| # | Sección | Página |
+| --- | --- | --- |
+| 1 | Negocio y giro | 3 |
+| 2 | Problema | 3 |
+| 3 | Objetivos | 3 |
+| 4 | Alcance | 4 |
+| 5 | Los seis módulos del negocio | 4 |
+| 6 | Reglas del negocio (30) | 6 |
+| 7 | Diseño del sistema | 7 |
+| 7.1 | Modelo conceptual | 7 |
+| 7.2 | Modelo de datos físico | 9 |
+| 7.3 | Arquitectura | 10 |
+| 7.4 | Flujos de los tres procesos integrados | 11 |
+| 8 | Matriz de responsabilidades | 15 |
+| 9 | Stack tecnológico y equivalencia | 15 |
+| 10 | Repositorio, Docker y publicación | 16 |
+| 11 | API, colección Postman y CRUD | 16 |
+| 11.1 | Instalación de la colección | 17 |
+| 11.2 | Variables de la colección | 17 |
+| 11.3 | Estructura de la colección | 18 |
+| 11.4 | Matriz CRUD por recurso | 19 |
+| 11.5 | Corrida encadenada de una prueba completa | 20 |
+| 11.6 | Errores controlados y resultado de la corrida | 20 |
+| 12 | Anexos | 21 |
+| 13 | Rúbrica | 22 |
 
 **Curso:** Desarrollo Web · **Catedrático:** M.A. Ing. Elvis Morales · **Ciclo:** octubre 2026
 
