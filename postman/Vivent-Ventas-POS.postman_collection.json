@@ -1,0 +1,761 @@
+{
+  "info": {
+    "_postman_id": "cfe1ca4a-7b22-4ba4-addf-dfe216845add",
+    "name": "Vivent · Ventas POS (CRUD)",
+    "description": "CRUD completo del proceso de ventas POS de Vivent, listo para demostrar en la defensa.\n\nOrden: 00 preparacion (login + producto con stock) -> 01 crear -> 02 leer -> 03 actualizar -> 04 eliminar -> 05 cobrar (confirmar) -> 06 anular -> 07 validaciones.\n\nEjecutar con el environment **Vivent Local**. El login guarda el token y el resto de requests lo heredan.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const now = new Date();",
+          "const iso = (d) => d.toISOString();",
+          "const day = (d) => d.toISOString().slice(0, 10);",
+          "pm.collectionVariables.set('nowIso', iso(now));",
+          "pm.collectionVariables.set('today', day(now));",
+          "pm.collectionVariables.set('yesterday', day(new Date(now.getTime() - 86400000)));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "companyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "branchId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productName",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "presentationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "conversionFactor",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "salePrice",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "availableBefore",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "onHandBefore",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "saleId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "saleId2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "saleDetailId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "today",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "yesterday",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "nowIso",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 · Preparacion",
+      "description": "Login y seleccion automatica de un producto con stock real, para que el CRUD funcione en cualquier base.",
+      "item": [
+        {
+          "name": "Login (guarda tokens)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Usa las variables `tenantSlug`, `username` y `password` del environment. Guarda el token y genera el `runId` de la corrida.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantSlug\": \"{{tenantSlug}}\",\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Sufijo unico por corrida: se genera UNA vez al iniciar sesion,",
+                  "// para que el numero de venta sea el mismo en todas las requests.",
+                  "pm.collectionVariables.set('runId', String(Date.now()).slice(-6));",
+                  "const body = pm.response.json();",
+                  "const d = body.data || {};",
+                  "['accessToken','refreshToken','companyId','branchId','userId'].forEach((key) => {",
+                  "  if (d[key]) pm.collectionVariables.set(key, d[key]);",
+                  "});",
+                  "pm.test('Token con permisos', () => pm.expect((d.permissions || []).length).to.be.above(0));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Producto con stock disponible",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inventory/balances?page=1&pageSize=100",
+            "description": "Toma el producto con mas existencia disponible y guarda `productId` y `availableBefore`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const items = (body.data && body.data.items) || [];",
+                  "const candidates = items.filter((it) => Number(it.quantityAvailable) >= 5);",
+                  "pm.test('Hay al menos un producto con stock >= 5', () => pm.expect(candidates.length).to.be.above(0));",
+                  "const chosen = candidates.sort((a, b) => Number(b.quantityAvailable) - Number(a.quantityAvailable))[0];",
+                  "if (chosen) {",
+                  "  pm.collectionVariables.set('productId', chosen.productId);",
+                  "  pm.collectionVariables.set('availableBefore', String(chosen.quantityAvailable));",
+                  "  pm.collectionVariables.set('productName', chosen.productName);",
+                  "}",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Presentacion vendible del producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/products/{{productId}}/presentations",
+            "description": "Elige la presentacion con factor 1 (o la menor) y guarda `presentationId`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const list = (body.data || []).filter((p) => p.active !== false);",
+                  "const available = Number(pm.collectionVariables.get('availableBefore'));",
+                  "const safe = list.filter((p) => Number(p.conversionFactor) <= Math.max(available - 1, 1));",
+                  "const pick = safe.find((p) => Number(p.conversionFactor) === 1) || safe[0] || list[0];",
+                  "pm.test('El producto tiene presentaciones', () => pm.expect(pick).to.be.an('object'));",
+                  "if (pick) {",
+                  "  pm.collectionVariables.set('presentationId', pick.id);",
+                  "  pm.collectionVariables.set('conversionFactor', String(pick.conversionFactor));",
+                  "  pm.collectionVariables.set('salePrice', String(pick.salePrice));",
+                  "}",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 · Crear (C)",
+      "description": "Alta de la venta en estado DRAFT.",
+      "item": [
+        {
+          "name": "Crear venta (DRAFT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/sales",
+            "description": "Guarda `saleId`. Requiere `sales.create`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"saleNumber\": \"POS-CRUD-{{runId}}\",\n  \"paymentMethod\": \"CASH\",\n  \"status\": \"DRAFT\",\n  \"notes\": \"Borrador creado desde Postman (paso C del CRUD)\",\n  \"details\": [\n    {\n      \"presentationId\": \"{{presentationId}}\",\n      \"quantityPresentation\": 2,\n      \"unitPrice\": 12.0,\n      \"discountAmount\": 0,\n      \"taxAmount\": 0\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const d = body.data || {};",
+                  "const saleId = d.id;",
+                  "if (saleId !== undefined && saleId !== null) pm.collectionVariables.set('saleId', saleId);",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Leer la venta creada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId}}",
+            "description": "Confirma que la venta nace en borrador con sus lineas y totales."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const sale = body.data || {};",
+                  "pm.test('Estado DRAFT', () => pm.expect(sale.status).to.eql('DRAFT'));",
+                  "pm.test('Tiene una linea', () => pm.expect(sale.details || []).to.have.lengthOf(1));",
+                  "pm.test('Total mayor que cero', () => pm.expect(Number(sale.totalAmount)).to.be.above(0));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 · Leer (R)",
+      "description": "Consulta por id y busqueda en el listado con filtros.",
+      "item": [
+        {
+          "name": "Listar ventas (filtro por estado y numero)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/sales?page=1&pageSize=20&status=DRAFT&query=POS-CRUD-{{runId}}",
+            "description": "Filtros: `status`, `query`, `branchId`, `paymentMethod`, fechas."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const items = (body.data && body.data.items) || [];",
+                  "pm.test('El listado responde', () => pm.expect(Array.isArray(items)).to.eql(true));",
+                  "pm.test('La venta creada aparece en el filtro', () => pm.expect(items.some((s) => s.id === pm.collectionVariables.get('saleId'))).to.eql(true));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 · Actualizar (U)",
+      "description": "Solo se puede editar mientras la venta esta en DRAFT.",
+      "item": [
+        {
+          "name": "Actualizar venta (cantidad 3 y pago con tarjeta)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId}}",
+            "description": "Cambia cantidad, notas y metodo de pago de la linea.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"saleNumber\": \"POS-CRUD-{{runId}}\",\n  \"paymentMethod\": \"CARD\",\n  \"status\": \"DRAFT\",\n  \"notes\": \"Borrador actualizado: cantidad 3 y pago con tarjeta (paso U del CRUD)\",\n  \"details\": [\n    {\n      \"presentationId\": \"{{presentationId}}\",\n      \"quantityPresentation\": 3,\n      \"unitPrice\": 12.0,\n      \"discountAmount\": 0,\n      \"taxAmount\": 0\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const sale = body.data || {};",
+                  "pm.test('Sigue en DRAFT', () => pm.expect(sale.status).to.eql('DRAFT'));",
+                  "pm.test('Metodo de pago actualizado', () => pm.expect(sale.paymentMethod).to.eql('CARD'));",
+                  "pm.test('Cantidad actualizada a 3', () => pm.expect(Number(sale.details[0].quantityPresentation)).to.eql(3));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar el cambio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId}}",
+            "description": "Relee la venta para comprobar que el cambio quedo guardado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const sale = body.data || {};",
+                  "pm.test('Cantidad persistida = 3', () => pm.expect(Number(sale.details[0].quantityPresentation)).to.eql(3));",
+                  "pm.test('Notas persistidas', () => pm.expect(sale.notes).to.contain('actualizado'));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 · Eliminar (D)",
+      "description": "Baja logica de un borrador. No se puede eliminar una venta confirmada.",
+      "item": [
+        {
+          "name": "Eliminar borrador",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId}}",
+            "description": "Requiere `sales.create`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const d = body.data || {};",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar que ya no existe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId}}",
+            "description": "Caso esperado: 404. Si devuelve 200, la baja no se aplico."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 4xx controlado', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('success = false', () => pm.expect(pm.response.json().success).to.eql(false));",
+                  "pm.test('Tiene mensaje', () => pm.expect(pm.response.json().message).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 · Cobrar en el POS (confirmar)",
+      "description": "Flujo real del POS: crear, confirmar (consume FIFO), verificar stock y kardex.",
+      "item": [
+        {
+          "name": "Crear venta para cobrar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/sales",
+            "description": "Guarda `saleId2` y `saleDetailId` (el kardex usa el id del detalle como `sourceId`).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"saleNumber\": \"POS-COBRO-{{runId}}\",\n  \"paymentMethod\": \"CASH\",\n  \"status\": \"DRAFT\",\n  \"notes\": \"Venta para cobrar en el POS\",\n  \"details\": [\n    {\n      \"presentationId\": \"{{presentationId}}\",\n      \"quantityPresentation\": 1,\n      \"unitPrice\": 12.0,\n      \"discountAmount\": 0,\n      \"taxAmount\": 0\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const d = body.data || {};",
+                  "const saleId2 = d.id;",
+                  "if (saleId2 !== undefined && saleId2 !== null) pm.collectionVariables.set('saleId2', saleId2);",
+                  "const saleDetailId = (d.details && d.details[0] ? d.details[0].id : null);",
+                  "if (saleDetailId !== undefined && saleDetailId !== null) pm.collectionVariables.set('saleDetailId', saleDetailId);",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stock antes del cobro",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inventory/balances?page=1&pageSize=10&productId={{productId}}&branchId={{branchId}}",
+            "description": "Guarda `onHandBefore` (disponible antes de confirmar)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const items = (body.data && body.data.items) || [];",
+                  "pm.test('Hay balance del producto', () => pm.expect(items.length).to.be.above(0));",
+                  "if (items[0]) pm.collectionVariables.set('onHandBefore', String(items[0].quantityAvailable));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirmar venta (cobrar)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId2}}/confirm",
+            "description": "Descuenta inventario consumiendo las capas FIFO mas antiguas y escribe el kardex `SALE_OUT`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const sale = body.data || {};",
+                  "pm.test('Estado CONFIRMED', () => pm.expect(sale.status).to.eql('CONFIRMED'));",
+                  "pm.test('Tiene costo FIFO calculado', () => pm.expect(sale.details[0].fifoCostTotal).to.not.eql(null));",
+                  "pm.test('Total mayor que cero', () => pm.expect(Number(sale.totalAmount)).to.be.above(0));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stock despues del cobro",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inventory/balances?page=1&pageSize=10&productId={{productId}}&branchId={{branchId}}",
+            "description": "Comprueba el descuento en unidad base (cantidad x factor de conversion)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const items = (body.data && body.data.items) || [];",
+                  "const after = Number(items[0] && items[0].quantityAvailable);",
+                  "const before = Number(pm.collectionVariables.get('onHandBefore'));",
+                  "const factor = Number(pm.collectionVariables.get('conversionFactor') || 1);",
+                  "pm.test('El stock bajo exactamente ' + factor + ' unidad(es) base', () => pm.expect(after).to.eql(before - factor));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Kardex: movimiento SALE_OUT",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inventory/kardex?page=1&pageSize=20&productId={{productId}}&branchId={{branchId}}",
+            "description": "Trazabilidad: cada venta confirmada deja su movimiento en el kardex."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const items = (body.data && body.data.items) || [];",
+                  "const detailId = pm.collectionVariables.get('saleDetailId');",
+                  "const match = items.find((m) => m.sourceId === detailId && m.movementType === 'SALE_OUT');",
+                  "pm.test('Existe el movimiento SALE_OUT de esta venta', () => pm.expect(match).to.be.an('object'));",
+                  "pm.test('Salida mayor que cero', () => match && pm.expect(Number(match.quantityOut)).to.be.above(0));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 · Anular venta",
+      "description": "Requiere `sales.cancel` y motivo obligatorio; define que pasa con la mercaderia.",
+      "item": [
+        {
+          "name": "Anular venta (devuelve a inventario)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId2}}/cancel",
+            "description": "`cancelDisposition`: RETURN_TO_STOCK | LOSS | DAMAGE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Prueba de anulacion desde Postman\",\n  \"cancelDisposition\": \"RETURN_TO_STOCK\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const sale = body.data || {};",
+                  "pm.test('Estado CANCELLED', () => pm.expect(sale.status).to.eql('CANCELLED'));",
+                  "pm.test('Guarda el motivo', () => pm.expect(sale.cancelReason).to.contain('anulacion'));",
+                  "pm.test('Guarda la disposicion', () => pm.expect(sale.cancelDisposition).to.eql('RETURN_TO_STOCK'));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Kardex: movimiento SALE_CANCEL_IN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/inventory/kardex?page=1&pageSize=20&productId={{productId}}&branchId={{branchId}}",
+            "description": "Si la disposicion fuera LOSS o DAMAGE, el movimiento seria de ajuste, no de devolucion."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const items = (body.data && body.data.items) || [];",
+                  "const detailId = pm.collectionVariables.get('saleDetailId');",
+                  "const match = items.find((m) => m.movementType === 'SALE_CANCEL_IN' && m.sourceId === detailId);",
+                  "pm.test('La anulacion devolvio la mercaderia al inventario', () => pm.expect(match).to.be.an('object'));",
+                  "pm.test('HTTP < 400', () => pm.expect(pm.response.code).to.be.below(400));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 · Validaciones (errores esperados)",
+      "description": "No cuentan como fallo: la coleccion comprueba que el backend rechaza operaciones invalidas.",
+      "item": [
+        {
+          "name": "Confirmar una venta anulada",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId2}}/confirm",
+            "description": "Esperado 400: una venta cancelada no se puede volver a cobrar."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 4xx controlado', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('success = false', () => pm.expect(pm.response.json().success).to.eql(false));",
+                  "pm.test('Tiene mensaje', () => pm.expect(pm.response.json().message).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear venta sin lineas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/sales",
+            "description": "Esperado 400: no se confirma una venta sin productos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"saleNumber\": \"POS-VACIA-{{runId}}\",\n  \"paymentMethod\": \"CASH\",\n  \"status\": \"DRAFT\",\n  \"notes\": \"Debe ser rechazada por validacion\",\n  \"details\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 4xx controlado', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('success = false', () => pm.expect(pm.response.json().success).to.eql(false));",
+                  "pm.test('Tiene mensaje', () => pm.expect(pm.response.json().message).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

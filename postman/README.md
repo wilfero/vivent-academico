@@ -11,6 +11,34 @@ Resultado esperado de una corrida completa: **128 requests, 242 aserciones, 0 fa
 
 ---
 
+## 0. Colección enfocada: Ventas POS (CRUD)
+
+Además de la colección completa, en esta carpeta está **`Vivent-Ventas-POS.postman_collection.json`**: 19 requests dedicadas a demostrar el proceso de ventas POS en la defensa.
+
+Usa el **mismo environment** (`Vivent-Local`) y se ejecuta sola de principio a fin:
+
+```
+00 · Preparacion      Login + producto con stock + presentación vendible
+01 · Crear (C)        POST /sales  →  GET /sales/{id}
+02 · Leer (R)         GET /sales?status=DRAFT&query=POS-CRUD-<runId>
+03 · Actualizar (U)   PUT /sales/{id} → GET para verificar
+04 · Eliminar (D)     DELETE /sales/{id} → GET (404 esperado)
+05 · Cobrar           crear → stock antes → confirmar → stock después → kardex SALE_OUT
+06 · Anular           cancel con motivo → kardex SALE_CANCEL_IN
+07 · Validaciones     confirmar una venta anulada (400) y crear venta sin líneas (400)
+```
+
+Resultado esperado: **19 requests, 65 aserciones, 0 fallos** (≈6 s). Se puede ejecutar repetidamente: el `runId` se genera una sola vez en el login.
+
+```bash
+npx newman run postman/Vivent-Ventas-POS.postman_collection.json \
+  -e postman/Vivent-Local.postman_environment.json
+```
+
+Detalle útil: en el kardex, `sourceId` es el **id del detalle** de la venta (`sourceType = SALE_DETAIL`), no el id de la venta. La colección lo captura como `saleDetailId` y lo usa en las aserciones.
+
+---
+
 ## 1. Requisitos
 
 1. **Postman** 10 o superior (también funciona la extensión de VS Code o Newman).

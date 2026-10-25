@@ -621,6 +621,8 @@ Gracias a `runId`, la colección se puede ejecutar **varias veces seguidas** sin
 | 13 · Auditoría | 1 | Bitácora de acciones sensibles. |
 | **Total** | **128** | Cobertura de todos los módulos del sistema. |
 
+Además se incluye **`postman/Vivent-Ventas-POS.postman_collection.json`**: una colección corta (19 requests, 65 aserciones) dedicada a demostrar el proceso de ventas POS paso a paso — crear, leer, actualizar, eliminar borrador, cobrar (confirmar con FIFO), anular con devolución a inventario y validaciones de error —, pensada para la defensa y ejecutable de principio a fin con el mismo environment.
+
 ### 11.4 Matriz CRUD por recurso
 
 Todas las rutas llevan el prefijo `/api/v1`. Ninguna entidad se borra físicamente: la columna «Baja» indica la **baja lógica** (estado o `deleted_at`) o la anulación con motivo.
