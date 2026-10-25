@@ -15,6 +15,8 @@ Resultado esperado de una corrida completa: **128 requests, 242 aserciones, 0 fa
 
 Además de la colección completa, en esta carpeta está **`Vivent-Ventas-POS.postman_collection.json`**: 19 requests dedicadas a demostrar el proceso de ventas POS en la defensa.
 
+> Guía visual con **todas las requests** (método, URL, body y trucos): abre `docs/TRUCOS_Y_POSTMAN.html` en el navegador. Es autocontenida y se puede imprimir.
+
 Usa el **mismo environment** (`Vivent-Local`) y se ejecuta sola de principio a fin:
 
 ```

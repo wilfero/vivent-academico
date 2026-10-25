@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vivent · Trucos, usos y Postman completo</title>
+<style>
+:root { --navy:#0f2a5c; --blue:#2563eb; --grey:#5a6478; --line:#dbe3f0; --bg:#f7f9fc; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:"Segoe UI",Calibri,Arial,sans-serif; color:#1a2233; line-height:1.55; background:#fff; }
+header { background:var(--navy); color:#fff; padding:36px 40px 28px; }
+header h1 { margin:0 0 6px; font-size:30px; letter-spacing:.5px; }
+header p { margin:0; color:#c9d3e3; font-size:13px; }
+.layout { display:flex; align-items:flex-start; }
+nav { position:sticky; top:0; width:250px; min-width:250px; max-height:100vh; overflow:auto; padding:22px 16px; background:var(--bg); border-right:1px solid var(--line); font-size:13px; }
+nav a { display:block; color:var(--navy); text-decoration:none; padding:5px 8px; border-radius:6px; }
+nav a:hover { background:#e8eefb; }
+nav .grp { font-weight:700; margin-top:14px; font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:#7a849a; }
+main { flex:1; padding:30px 42px 80px; max-width:1050px; }
+h2 { color:var(--navy); border-bottom:2.5px solid var(--navy); padding-bottom:6px; margin-top:44px; font-size:22px; }
+h3 { color:#24457e; font-size:15px; margin:26px 0 8px; }
+h4 { color:#24457e; font-size:13px; margin:16px 0 6px; }
+p { font-size:13.5px; }
+table { border-collapse:collapse; width:100%; margin:12px 0 20px; font-size:12.5px; }
+th,td { border:1px solid #c9d3e3; padding:6px 9px; text-align:left; vertical-align:top; }
+th { background:#eef2fa; color:var(--navy); }
+code, .mono { font-family:Consolas,"Cascadia Mono",monospace; font-size:12px; background:#f1f4fa; padding:1px 5px; border-radius:4px; }
+pre { background:#f4f6fb; border:1px solid var(--line); border-radius:8px; padding:10px 12px; overflow:auto; font-family:Consolas,monospace; font-size:11.5px; line-height:1.45; }
+pre.body { background:#0f172a; color:#e2e8f0; border:none; }
+pre.body code { background:none; }
+.callout { border-left:4px solid var(--blue); background:#eef4ff; padding:10px 14px; border-radius:6px; margin:14px 0; font-size:13px; }
+.warn { border-left-color:#d97706; background:#fff7ed; }
+.req { border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:12px 0; page-break-inside:avoid; }
+.req-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.req-name { font-weight:700; margin-top:6px; font-size:13.5px; }
+.m { font-size:10.5px; font-weight:700; letter-spacing:.06em; color:#fff; padding:2px 7px; border-radius:4px; }
+.m.get { background:#0f766e; } .m.post { background:#1d4ed8; } .m.put { background:#b45309; } .m.delete { background:#b91c1c; }
+.tip { color:var(--grey); font-size:12.5px; margin:6px 0; }
+.nobody { color:#8a93a6; font-size:12px; margin:6px 0 0; }
+.folder-desc { color:var(--grey); font-size:12.5px; }
+.badge { display:inline-block; background:#eef2fa; color:var(--navy); border:1px solid var(--line); border-radius:999px; padding:1px 9px; font-size:11px; margin:0 4px 4px 0; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media (max-width:900px){ .layout{display:block} nav{position:static;width:auto;max-height:none} main{padding:20px} .grid2{grid-template-columns:1fr} }
+@media print { nav{display:none} header{padding:18px} main{max-width:none;padding:0} h2{page-break-after:avoid} pre.body{background:#fff;color:#000;border:1px solid #ccc} .req{page-break-inside:avoid} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Vivent · Trucos, usos y Postman completo</h1>
+  <p>Guía de defensa y operación · Curso Desarrollo Web · Octubre 2026 · 128 + 19 requests listas para copiar</p>
+</header>
+<div class="layout">
+
+<nav>
+  <div class="grp">Empezar</div>
+  <a href="#intro">Qué es este documento</a>
+  <a href="#entorno">Entorno y credenciales</a>
+  <a href="#ids">Cómo obtener cada id</a>
+  <a href="#flujo">Demo en 15 minutos</a>
+  <div class="grp">Trucos</div>
+  <a href="#trucos">20 trucos que valen puntos</a>
+  <a href="#errores">Errores esperados</a>
+  <div class="grp">Postman</div>
+  <a href="#postman">Colección completa</a>
+  <a href="#pos">Colección Ventas POS</a>
+  <a href="#newman">Ejecutar con Newman</a>
+</nav>
+
+<main>
+
+<h2 id="intro">Qué es este documento</h2>
+<p>Guía de uso del sistema con <strong>todas las peticiones de Postman</strong> listas para copiar. Cada request incluye método, ruta, body y para qué sirve. Solo tienes que cambiar los <code>{{ids}}</code> por los de tu base; el resto funciona tal cual.</p>
+<div class="callout"><strong>Regla de oro:</strong> ejecuta primero el <em>Login</em>. El token queda en la variable de colección <code>accessToken</code> y todas las demás peticiones lo heredan.</div>
+<div class="grid2">
+  <div>
+    <h4>Lo que necesitas</h4>
+    <ul>
+      <li>Stack arriba: <code>docker compose -f docker/compose.local.yml up -d</code></li>
+      <li>Datos demo: <code>python database/bootstrap_demo.py</code></li>
+      <li>Postman con la colección y el environment <strong>Vivent Local</strong></li>
+    </ul>
+  </div>
+  <div>
+    <h4>Atajos</h4>
+    <ul>
+      <li>Swagger: <code>http://localhost:8080/swagger-ui/index.html</code></li>
+      <li>App: <code>http://localhost:3000</code></li>
+      <li>Base de datos: <code>http://localhost:8090</code> (Adminer)</li>
+    </ul>
+  </div>
+</div>
+
+
+<h2 id="entorno">Entorno y credenciales</h2>
+<table>
+  <tr><th>Servicio</th><th>URL</th><th>Detalle</th></tr>
+  <tr><td>Frontend</td><td><code>http://localhost:3000</code></td><td>Next.js 16</td></tr>
+  <tr><td>Backend</td><td><code>http://localhost:8080</code></td><td>Spring Boot 4 · prefijo <code>/api/v1</code></td></tr>
+  <tr><td>Swagger</td><td><code>http://localhost:8080/swagger-ui/index.html</code></td><td>Público, sin token</td></tr>
+  <tr><td>PostgreSQL</td><td><code>localhost:5433</code></td><td>db/user/pass: <code>vivent</code></td></tr>
+  <tr><td>Adminer</td><td><code>http://localhost:8090</code></td><td>Server: <code>vivent-academico-db</code></td></tr>
+</table>
+
+<h3>Variables del environment</h3>
+<table>
+  <tr><th>Variable</th><th>Valor</th><th>Uso</th></tr>
+  <tr><td><code>baseUrl</code></td><td><code>http://localhost:8080</code></td><td>URL de la API</td></tr>
+  <tr><td><code>tenantSlug</code></td><td><code>demo</code></td><td>Empresa (multi-tenant)</td></tr>
+  <tr><td><code>username</code></td><td><code>admin</code></td><td>Usuario</td></tr>
+  <tr><td><code>password</code></td><td><code>ChangeMe123!</code></td><td>Contraseña (solo local)</td></tr>
+  <tr><td><code>branch2Id</code></td><td>(se llena solo)</td><td>Sucursal destino en traslados</td></tr>
+</table>
+<div class="callout warn"><strong>Ojo:</strong> el environment <em>no</em> debe declarar <code>accessToken</code>. Si lo declara vacío, tapa la variable de colección y todo responde 401.</div>
+
+<h3>Usuarios demo</h3>
+<table>
+  <tr><th>Usuario</th><th>Rol</th><th>Sirve para</th></tr>
+  <tr><td><code>admin</code></td><td>COMPANY_ADMIN</td><td>Todo, incluido aprobar y anular</td></tr>
+  <tr><td><code>seller</code></td><td>SELLER</td><td>POS y cierre de caja (no puede crear productos ni ver usuarios)</td></tr>
+  <tr><td><code>inventory</code></td><td>WAREHOUSE_USER</td><td>Compras y ajustes</td></tr>
+  <tr><td><code>transfers_origin</code></td><td>WAREHOUSE_USER</td><td>Despachar traslados</td></tr>
+  <tr><td><code>transfers_destination</code></td><td>WAREHOUSE_USER (sucursal 2)</td><td>Solicitar y recibir traslados</td></tr>
+  <tr><td><code>auditor</code></td><td>AUDITOR</td><td>Solo lectura y bitácora</td></tr>
+</table>
+
+
+<h2 id="ids">Cómo obtener cada id (lo único que debes cambiar)</h2>
+<p>Los ids se obtienen con una llamada y quedan guardados automáticamente en las colecciones. Si trabajas a mano, aquí está el origen de cada uno.</p>
+<table>
+  <tr><th>Variable</th><th>De dónde sale</th><th>Cómo</th></tr>
+  <tr><td><code>accessToken</code>, <code>refreshToken</code>, <code>companyId</code>, <code>branchId</code>, <code>userId</code></td><td>Login</td><td><code>POST /api/v1/auth/login</code> → <code>data.*</code></td></tr>
+  <tr><td><code>branch2Id</code></td><td>Sucursales</td><td><code>GET /api/v1/branches?page=1&amp;pageSize=50</code> → elige la segunda</td></tr>
+  <tr><td><code>unitCode</code></td><td>Unidades</td><td><code>GET /api/v1/product-units</code> → <code>bag, bottle, can, kg, lb, liter, meter, unit</code></td></tr>
+  <tr><td><code>categoryId</code></td><td>Categorías</td><td><code>POST /api/v1/categories</code> o <code>GET /api/v1/categories</code></td></tr>
+  <tr><td><code>productId</code></td><td>Productos</td><td><code>POST /api/v1/products</code> o <code>GET /api/v1/inventory/balances</code> → <code>items[].productId</code></td></tr>
+  <tr><td><code>presentationId</code></td><td>Presentaciones</td><td><code>GET /api/v1/products/{productId}/presentations</code> → <code>data[].id</code></td></tr>
+  <tr><td><code>supplierId</code>, <code>customerId</code></td><td>Terceros</td><td><code>GET /api/v1/suppliers</code>, <code>GET /api/v1/customers</code></td></tr>
+  <tr><td><code>purchaseId</code>, <code>saleId</code>, <code>transferId</code>, <code>adjustmentId</code>, <code>closureId</code></td><td>Al crearlos</td><td>La respuesta del <code>POST</code> trae <code>data.id</code></td></tr>
+  <tr><td><code>saleDetailId</code></td><td>Detalle de venta</td><td><code>data.details[0].id</code> (el kardex usa este id como <code>sourceId</code>)</td></tr>
+  <tr><td><code>roleId</code>, <code>newUserId</code></td><td>Roles y usuarios</td><td><code>GET /api/v1/roles</code>, <code>POST /api/v1/users</code></td></tr>
+</table>
+<div class="callout"><strong>Truco:</strong> si no sabes qué producto tiene stock, llama <code>GET /api/v1/inventory/balances?page=1&amp;pageSize=100</code> y usa el que tenga <code>quantityAvailable</code> mayor.</div>
+
+
+<h2 id="flujo">Demo en 15 minutos (orden probado)</h2>
+<table>
+  <tr><th>Min</th><th>Qué ejecutar</th><th>Qué se ve</th></tr>
+  <tr><td>0–1</td><td>Login</td><td>Rol <code>COMPANY_ADMIN</code> y 63 permisos</td></tr>
+  <tr><td>1–3</td><td>Tenant config + Empresa actual + Sucursales</td><td>Multiempresa por subdominio</td></tr>
+  <tr><td>3–5</td><td>Catálogo: categoría → producto → presentación</td><td>Unidad base y factor de conversión</td></tr>
+  <tr><td>5–7</td><td>Compra: borrador → confirmar</td><td>Capa FIFO + inventario + kardex</td></tr>
+  <tr><td>7–9</td><td>Venta POS: crear → confirmar</td><td>Stock baja y kardex <code>SALE_OUT</code></td></tr>
+  <tr><td>9–11</td><td>Traslado: aprobar → despachar → recibir</td><td>Reserva y movimientos en dos sucursales</td></tr>
+  <tr><td>11–12</td><td>Ajuste: crear → aprobar</td><td>Kardex <code>DAMAGE_OUT</code></td></tr>
+  <tr><td>12–13</td><td>Cierre: preview → crear → aprobar</td><td>Arqueo de caja</td></tr>
+  <tr><td>13–15</td><td>Reportes + APIs externas</td><td>Filtros, CSV, Photon y Open Food Facts</td></tr>
+</table>
+
+
+<h2 id="trucos">20 trucos que valen puntos</h2>
+<ol>
+  <li><strong>Login una sola vez.</strong> El token vive en la variable de colección; el environment no lo declara a propósito.</li>
+  <li><strong>El refresh rota.</strong> Cada <code>/auth/refresh</code> invalida el token anterior: reusarlo devuelve 401. Es la prueba de la rotación.</li>
+  <li><strong>Logout revoca de verdad.</strong> Después de <code>/auth/logout</code>, el refresh usado ya no sirve.</li>
+  <li><strong>Diferencias de fecha.</strong> <code>sales-summary</code>, <code>products</code>, <code>transfers-summary</code> y <code>adjustments-summary</code> reciben ISO (<code>2026-10-01T00:00:00Z</code>); <code>purchases-summary</code> y <code>cash-closures-summary</code> reciben fecha simple (<code>2026-10-01</code>).</li>
+  <li><strong>Kardex:</strong> <code>sourceId</code> es el id del <em>detalle</em> (<code>sourceType = SALE_DETAIL</code>), no el de la venta.</li>
+  <li><strong>Cierre único:</strong> un cierre por usuario + sucursal + día. La colección calcula una fecha libre en un pre-request.</li>
+  <li><strong>Estados del cierre:</strong> crear (CLOSED) → aprobar (APPROVED) → reabrir (REOPENED) → cerrar con monto (CLOSED).</li>
+  <li><strong>Descuento a nivel venta:</strong> exige <code>sales.apply_discount</code>; con <code>seller</code> da 403.</li>
+  <li><strong>Quitar línea:</strong> <code>sales.remove_item</code>; sin él se pide autorización de supervisor.</li>
+  <li><strong>Traslado en 3 usuarios:</strong> <code>transfers_destination</code> solicita y recibe, <code>admin</code> aprueba, <code>transfers_origin</code> despacha. Así se ve la separación de funciones.</li>
+  <li><strong>Anular venta:</strong> pide motivo y <code>cancelDisposition</code> (<code>RETURN_TO_STOCK</code>, <code>LOSS</code>, <code>DAMAGE</code>).</li>
+  <li><strong>Compra confirmada no se edita:</strong> se anula con motivo. Si intentas <code>PUT</code>, responde 400.</li>
+  <li><strong>Bajas lógicas:</strong> para demostrar un <code>DELETE</code> sin romper la cadena, crea un registro temporal y bórralo (así lo hacen las colecciones).</li>
+  <li><strong>Ajuste no toca stock hasta aprobarse.</strong> Ideal para explicar la máquina de estados.</li>
+  <li><strong>Open Food Facts:</strong> código <code>3017620422003</code> = Nutella; <code>0000000000000</code> = <code>found:false</code>. Solo el rol con <code>products.create</code> ve el diálogo de registro en el POS.</li>
+  <li><strong>Photon:</strong> <code>?q=Cuilapa</code> devuelve lat/lng y etiqueta; <code>q=</code> vacío devuelve <code>found:false</code> (200, no 500).</li>
+  <li><strong>Swagger sin token</strong> en <code>/swagger-ui/index.html</code> para que el catedrático revise la API.</li>
+  <li><strong>Permisos en backend:</strong> <code>GET /api/v1/users</code> con token de <code>seller</code> da 403. No es que el botón esté oculto: la API lo rechaza.</li>
+  <li><strong>Reportes con filtros:</strong> exporta CSV e imprime desde el botón; el CSV respeta el filtro activo.</li>
+  <li><strong>Repetible:</strong> la colección completa y la de POS generan un <code>runId</code> en el login, así puedes correrlas varias veces sin chocar con SKU ni números de documento.</li>
+</ol>
+
+
+<h2 id="errores">Errores esperados (no son fallos)</h2>
+<table>
+  <tr><th>Request</th><th>Respuesta</th><th>Qué demuestra</th></tr>
+  <tr><td>Login con clave incorrecta</td><td><code>401 INVALID_CREDENTIALS</code></td><td>Autenticación por tenant + usuario</td></tr>
+  <tr><td>Refresh reutilizado</td><td><code>401</code></td><td>Rotación y revocación</td></tr>
+  <tr><td>Rechazar / cancelar ajuste aprobado</td><td><code>400</code></td><td>Máquina de estados</td></tr>
+  <tr><td>Rechazar traslado aprobado / cancelar recibido</td><td><code>400</code></td><td>Máquina de estados</td></tr>
+  <tr><td>Cambiar contraseña por la misma</td><td><code>400 VALIDATION_ERROR</code></td><td>Política de contraseñas</td></tr>
+  <tr><td>Confirmar venta anulada</td><td><code>400</code></td><td>No se recobra una venta cancelada</td></tr>
+  <tr><td>Crear venta sin líneas</td><td><code>400</code></td><td>Validación de negocio</td></tr>
+  <tr><td>Photon / Open Food Facts sin datos</td><td><code>200</code> con <code>found:false</code></td><td>Falla controlada de un servicio externo</td></tr>
+</table>
+
+<h2 id="postman">Colección completa (128 requests)</h2>
+<p>Las 14 carpetas de <code>Vivent.postman_collection.json</code>. Todas heredan <code>Bearer {accessToken}</code> del login.</p>
+<section class="folder"><h2>00 · Público</h2>
+<p class="folder-desc">Endpoints sin token. Se usan antes del login para cargar la empresa por subdominio.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/public/tenant-config?subdomain={{tenantSlug}}</code></div>
+<div class="req-name">Tenant config (público)</div>
+<p class="tip">Nombre comercial, colores, moneda y módulos habilitados. Es lo primero que hace el frontend.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>01 · Autenticación</h2>
+<p class="folder-desc">Login, sesión, refresh y logout. El login guarda `accessToken`, `refreshToken`, `companyId`, `branchId` y `userId`.</p>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/auth/login</code></div>
+<div class="req-name">Login (guarda tokens)</div>
+<p class="tip">Autentica por tenant + usuario. En Tests guarda el par de tokens y los ids del contexto.</p>
+<pre class="body">{
+  &quot;tenantSlug&quot;: &quot;{{tenantSlug}}&quot;,
+  &quot;username&quot;: &quot;{{username}}&quot;,
+  &quot;password&quot;: &quot;{{password}}&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/auth/me</code></div>
+<div class="req-name">Sesión actual (/auth/me)</div>
+<p class="tip">Usuario dueño del token.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/auth/refresh</code></div>
+<div class="req-name">Refresh token (renueva y rota)</div>
+<p class="tip">Canjea el refresh por un par nuevo; el anterior queda revocado.</p>
+<pre class="body">{
+  &quot;refreshToken&quot;: &quot;{{refreshToken}}&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/auth/logout</code></div>
+<div class="req-name">Logout (revoca refresh)</div>
+<p class="tip">Revoca el refresh token presentado.</p>
+<pre class="body">{
+  &quot;refreshToken&quot;: &quot;{{refreshToken}}&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/auth/login</code></div>
+<div class="req-name">Login con clave incorrecta (401)</div>
+<p class="tip">Caso de error: 401 INVALID_CREDENTIALS.</p>
+<pre class="body">{
+  &quot;tenantSlug&quot;: &quot;{{tenantSlug}}&quot;,
+  &quot;username&quot;: &quot;{{username}}&quot;,
+  &quot;password&quot;: &quot;clave-incorrecta&quot;
+}</pre>
+</article>
+</section>
+<section class="folder"><h2>02 · Configuración del tenant</h2>
+<p class="folder-desc">Empresa, sucursales y suscripción. `GET Sucursales` guarda `branch2Id` para el traslado.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/companies/current</code></div>
+<div class="req-name">Empresa actual</div>
+<p class="tip">Datos de la empresa del token.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/companies/current</code></div>
+<div class="req-name">Actualizar empresa</div>
+<p class="tip">Nombres, colores, tema, moneda e impuesto (settings.update).</p>
+<pre class="body">{
+  &quot;legalName&quot;: &quot;Vivent Demo Company&quot;,
+  &quot;commercialName&quot;: &quot;Demo Vivent GT&quot;,
+  &quot;logoUrl&quot;: null,
+  &quot;primaryColor&quot;: &quot;#2563eb&quot;,
+  &quot;secondaryColor&quot;: &quot;#64748b&quot;,
+  &quot;defaultTheme&quot;: &quot;light&quot;,
+  &quot;supportedLocales&quot;: [
+    &quot;es-GT&quot;,
+    &quot;en-US&quot;
+  ],
+  &quot;defaultLocale&quot;: &quot;es-GT&quot;,
+  &quot;currencyCode&quot;: &quot;GTQ&quot;,
+  &quot;timezone&quot;: &quot;America/Guatemala&quot;,
+  &quot;taxEnabled&quot;: true,
+  &quot;taxRate&quot;: 5.0
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/branches?page=1&amp;pageSize=50</code></div>
+<div class="req-name">Sucursales</div>
+<p class="tip">Guarda `branch2Id` con la sucursal distinta a la del usuario.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/branches/{{branchId}}</code></div>
+<div class="req-name">Sucursal por id</div>
+<p class="tip">Detalle de una sucursal.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/branches/{{branchId}}</code></div>
+<div class="req-name">Actualizar sucursal</div>
+<p class="tip">Dirección y contacto (settings.update).</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;Main Branch&quot;,
+  &quot;code&quot;: &quot;CENTRAL&quot;,
+  &quot;address&quot;: &quot;Zona 1, Ciudad de Guatemala&quot;,
+  &quot;phone&quot;: &quot;2222-2222&quot;,
+  &quot;email&quot;: &quot;central@demo.corpoviva.com&quot;,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/subscriptions/current</code></div>
+<div class="req-name">Suscripción actual</div>
+<p class="tip">Plan y estado de la suscripción.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>03 · Catálogo</h2>
+<p class="folder-desc">CRUD de categorías, unidades, productos y presentaciones. Orden: categoría → producto → presentación.</p>
+<h3>Categorías</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/categories?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar categorías</div>
+<p class="tip">Listado paginado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/categories</code></div>
+<div class="req-name">Crear categoría</div>
+<p class="tip">Crea y guarda `categoryId`; esta categoría la usa el producto.</p>
+<pre class="body">{
+  &quot;parentCategoryId&quot;: null,
+  &quot;name&quot;: &quot;PM Categoría {{runId}}&quot;,
+  &quot;description&quot;: &quot;Categoría creada desde Postman&quot;,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/categories/{{categoryId}}</code></div>
+<div class="req-name">Obtener categoría</div>
+<p class="tip">Detalle de la categoría creada.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/categories/{{categoryId}}</code></div>
+<div class="req-name">Actualizar categoría</div>
+<p class="tip">Renombra la categoría.</p>
+<pre class="body">{
+  &quot;parentCategoryId&quot;: null,
+  &quot;name&quot;: &quot;PM Categoría {{runId}} (editada)&quot;,
+  &quot;description&quot;: &quot;Categoría creada desde Postman&quot;,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/categories</code></div>
+<div class="req-name">Crear categoría temporal</div>
+<p class="tip">Registro desechable: permite demostrar la baja lógica sin desactivar la categoría que usa el producto.</p>
+<pre class="body">{
+  &quot;parentCategoryId&quot;: null,
+  &quot;name&quot;: &quot;PM Categoría temporal {{runId}}&quot;,
+  &quot;description&quot;: &quot;Categoría creada desde Postman&quot;,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/categories/{{tempCategoryId}}</code></div>
+<div class="req-name">Desactivar categoría</div>
+<p class="tip">Baja lógica (no borra la fila).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<h3>Unidades</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/product-units</code></div>
+<div class="req-name">Listar unidades</div>
+<p class="tip">Unidades disponibles (unit, can, bottle, kg...).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/product-units</code></div>
+<div class="req-name">Crear unidad</div>
+<p class="tip">Crea y guarda `unitCode`.</p>
+<pre class="body">{
+  &quot;code&quot;: &quot;pm{{runId}}&quot;,
+  &quot;name&quot;: &quot;PM Unidad {{runId}}&quot;,
+  &quot;translationKey&quot;: &quot;unit.pm_test&quot;,
+  &quot;allowsDecimal&quot;: false,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/product-units/{{unitCode}}</code></div>
+<div class="req-name">Actualizar unidad</div>
+<p class="tip">Renombra la unidad creada.</p>
+<pre class="body">{
+  &quot;code&quot;: &quot;pm{{runId}}&quot;,
+  &quot;name&quot;: &quot;PM Unidad {{runId}} (editada)&quot;,
+  &quot;translationKey&quot;: &quot;unit.pm_test&quot;,
+  &quot;allowsDecimal&quot;: false,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/product-units/{{unitCode}}</code></div>
+<div class="req-name">Desactivar unidad</div>
+<p class="tip">Baja lógica.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<h3>Productos</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/products?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar productos</div>
+<p class="tip">Filtros opcionales: `query`, `categoryId`.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/products</code></div>
+<div class="req-name">Crear producto</div>
+<p class="tip">Requiere `categoryId` (creado arriba).</p>
+<pre class="body">{
+  &quot;categoryId&quot;: &quot;{{categoryId}}&quot;,
+  &quot;name&quot;: &quot;PM Producto {{runId}}&quot;,
+  &quot;description&quot;: &quot;Producto creado desde Postman&quot;,
+  &quot;baseUnitCode&quot;: &quot;unit&quot;,
+  &quot;sku&quot;: &quot;PM-{{runId}}&quot;,
+  &quot;minimumStock&quot;: 5,
+  &quot;stockable&quot;: true,
+  &quot;hasExpirationDate&quot;: false,
+  &quot;hasLotTracking&quot;: false,
+  &quot;hasSerialTracking&quot;: false,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/products/{{productId}}</code></div>
+<div class="req-name">Obtener producto</div>
+<p class="tip">Detalle del producto.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/products/{{productId}}</code></div>
+<div class="req-name">Actualizar producto</div>
+<p class="tip">Nombre y stock mínimo.</p>
+<pre class="body">{
+  &quot;categoryId&quot;: &quot;{{categoryId}}&quot;,
+  &quot;name&quot;: &quot;PM Producto {{runId}} (editado)&quot;,
+  &quot;description&quot;: &quot;Producto creado desde Postman&quot;,
+  &quot;baseUnitCode&quot;: &quot;unit&quot;,
+  &quot;sku&quot;: &quot;PM-{{runId}}&quot;,
+  &quot;minimumStock&quot;: 8,
+  &quot;stockable&quot;: true,
+  &quot;hasExpirationDate&quot;: false,
+  &quot;hasLotTracking&quot;: false,
+  &quot;hasSerialTracking&quot;: false,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/products</code></div>
+<div class="req-name">Crear producto temporal</div>
+<p class="tip">Registro desechable: permite demostrar la baja lógica sin romper presentaciones, compras ni ventas.</p>
+<pre class="body">{
+  &quot;categoryId&quot;: &quot;{{categoryId}}&quot;,
+  &quot;name&quot;: &quot;PM Producto temporal {{runId}}&quot;,
+  &quot;description&quot;: &quot;Producto creado desde Postman&quot;,
+  &quot;baseUnitCode&quot;: &quot;unit&quot;,
+  &quot;sku&quot;: &quot;PM-TMP-{{runId}}&quot;,
+  &quot;minimumStock&quot;: 5,
+  &quot;stockable&quot;: true,
+  &quot;hasExpirationDate&quot;: false,
+  &quot;hasLotTracking&quot;: false,
+  &quot;hasSerialTracking&quot;: false,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/products/{{tempProductId}}</code></div>
+<div class="req-name">Desactivar producto</div>
+<p class="tip">Baja lógica.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<h3>Presentaciones</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/product-presentations?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar todas las presentaciones</div>
+<p class="tip">Vista global usada por el POS.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/products/{{productId}}/presentations</code></div>
+<div class="req-name">Crear presentación</div>
+<p class="tip">Guarda `presentationId` (lo usan compras, ventas, traslados y ajustes).</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Presentación {{runId}}&quot;,
+  &quot;barcode&quot;: &quot;779{{runId}}&quot;,
+  &quot;conversionFactor&quot;: 1,
+  &quot;purchasePriceSuggested&quot;: 8.0,
+  &quot;salePrice&quot;: 12.0,
+  &quot;defaultPurchase&quot;: true,
+  &quot;defaultSale&quot;: true,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/products/{{productId}}/presentations</code></div>
+<div class="req-name">Listar presentaciones del producto</div>
+<p class="tip">Presentaciones del producto recién creado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/products/{{productId}}/presentations/{{presentationId}}</code></div>
+<div class="req-name">Obtener presentación</div>
+<p class="tip">Detalle de la presentación.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/products/{{productId}}/presentations/{{presentationId}}</code></div>
+<div class="req-name">Actualizar presentación</div>
+<p class="tip">Cambia el precio de venta.</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Presentación {{runId}}&quot;,
+  &quot;barcode&quot;: &quot;779{{runId}}&quot;,
+  &quot;conversionFactor&quot;: 1,
+  &quot;purchasePriceSuggested&quot;: 8.0,
+  &quot;salePrice&quot;: 12.5,
+  &quot;defaultPurchase&quot;: true,
+  &quot;defaultSale&quot;: true,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/products/{{productId}}/presentations</code></div>
+<div class="req-name">Crear presentación temporal</div>
+<p class="tip">Registro desechable para demostrar la baja lógica.</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Presentación temporal {{runId}}&quot;,
+  &quot;barcode&quot;: &quot;777{{runId}}&quot;,
+  &quot;conversionFactor&quot;: 1,
+  &quot;purchasePriceSuggested&quot;: 8.0,
+  &quot;salePrice&quot;: 12.0,
+  &quot;defaultPurchase&quot;: true,
+  &quot;defaultSale&quot;: true,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/products/{{productId}}/presentations/{{tempPresentationId}}</code></div>
+<div class="req-name">Desactivar presentación</div>
+<p class="tip">Baja lógica.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<h3>Combos</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/combos</code></div>
+<div class="req-name">Listar combos</div>
+<p class="tip">Listado de combos de la empresa (puede venir vacío).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/combos</code></div>
+<div class="req-name">Crear combo</div>
+<p class="tip">Requiere `productId` y `presentationId`.</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Combo {{runId}}&quot;,
+  &quot;code&quot;: &quot;PM-COMBO-{{runId}}&quot;,
+  &quot;barcode&quot;: &quot;778{{runId}}&quot;,
+  &quot;description&quot;: &quot;Combo creado desde Postman&quot;,
+  &quot;comboPrice&quot;: 20.0,
+  &quot;startAt&quot;: null,
+  &quot;endAt&quot;: null,
+  &quot;isActive&quot;: true,
+  &quot;items&quot;: [
+    {
+      &quot;productId&quot;: &quot;{{productId}}&quot;,
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 2
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/combos/{{comboId}}</code></div>
+<div class="req-name">Obtener combo</div>
+<p class="tip">Detalle con sus líneas.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/combos/{{comboId}}</code></div>
+<div class="req-name">Actualizar combo</div>
+<p class="tip">Cambia el precio del combo.</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Combo {{runId}}&quot;,
+  &quot;code&quot;: &quot;PM-COMBO-{{runId}}&quot;,
+  &quot;barcode&quot;: &quot;778{{runId}}&quot;,
+  &quot;description&quot;: &quot;Combo creado desde Postman&quot;,
+  &quot;comboPrice&quot;: 18.0,
+  &quot;startAt&quot;: null,
+  &quot;endAt&quot;: null,
+  &quot;isActive&quot;: true,
+  &quot;items&quot;: [
+    {
+      &quot;productId&quot;: &quot;{{productId}}&quot;,
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 2
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/combos/by-barcode/778{{runId}}</code></div>
+<div class="req-name">Buscar combo por código de barras</div>
+<p class="tip">Resolución de combo para el POS.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/combos/{{comboId}}</code></div>
+<div class="req-name">Desactivar combo</div>
+<p class="tip">Baja lógica.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<h3>Búsqueda por código de barras</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/products/by-barcode/740000000001</code></div>
+<div class="req-name">Buscar en el catálogo propio</div>
+<p class="tip">Resuelve producto, presentación, factor y precio.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/products/barcode-lookup/3017620422003</code></div>
+<div class="req-name">Buscar en Open Food Facts</div>
+<p class="tip">Integración externa: nombre y marca del producto.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>04 · Terceros</h2>
+<p class="folder-desc">Proveedores y clientes de la empresa (no por sucursal).</p>
+<h3>Proveedores</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/suppliers?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar proveedores</div>
+<p class="tip">Listado paginado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/suppliers</code></div>
+<div class="req-name">Crear proveedor</div>
+<p class="tip">Guarda `supplierId` para la compra.</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Proveedor {{runId}}&quot;,
+  &quot;taxId&quot;: &quot;PM-{{runId}}&quot;,
+  &quot;email&quot;: &quot;pm.proveedor@example.com&quot;,
+  &quot;phone&quot;: &quot;5555-5555&quot;,
+  &quot;address&quot;: &quot;Zona 1, Guatemala&quot;,
+  &quot;contactName&quot;: &quot;Contacto Postman&quot;,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/suppliers/{{supplierId}}</code></div>
+<div class="req-name">Obtener proveedor</div>
+<p class="tip">Detalle del proveedor.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/suppliers/{{supplierId}}</code></div>
+<div class="req-name">Actualizar proveedor</div>
+<p class="tip">Cambia el contacto.</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Proveedor {{runId}}&quot;,
+  &quot;taxId&quot;: &quot;PM-{{runId}}&quot;,
+  &quot;email&quot;: &quot;pm.proveedor@example.com&quot;,
+  &quot;phone&quot;: &quot;5555-5555&quot;,
+  &quot;address&quot;: &quot;Zona 1, Guatemala&quot;,
+  &quot;contactName&quot;: &quot;Contacto Postman (editado)&quot;,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/suppliers</code></div>
+<div class="req-name">Crear proveedor temporal</div>
+<p class="tip">Registro desechable para demostrar la baja lógica sin romper la compra.</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Proveedor temporal {{runId}}&quot;,
+  &quot;taxId&quot;: &quot;PM-T-{{runId}}&quot;,
+  &quot;email&quot;: &quot;pm.proveedor@example.com&quot;,
+  &quot;phone&quot;: &quot;5555-5555&quot;,
+  &quot;address&quot;: &quot;Zona 1, Guatemala&quot;,
+  &quot;contactName&quot;: &quot;Contacto Postman&quot;,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/suppliers/{{tempSupplierId}}</code></div>
+<div class="req-name">Eliminar proveedor</div>
+<p class="tip">Baja lógica.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<h3>Clientes</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/customers?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar clientes</div>
+<p class="tip">Listado paginado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/customers</code></div>
+<div class="req-name">Crear cliente</div>
+<p class="tip">Guarda `customerId` para la venta.</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Cliente {{runId}}&quot;,
+  &quot;taxId&quot;: &quot;PM-C-{{runId}}&quot;,
+  &quot;email&quot;: &quot;pm.cliente@example.com&quot;,
+  &quot;phone&quot;: &quot;4444-4444&quot;,
+  &quot;address&quot;: &quot;Zona 2, Guatemala&quot;,
+  &quot;genericConsumer&quot;: false,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/customers/{{customerId}}</code></div>
+<div class="req-name">Obtener cliente</div>
+<p class="tip">Detalle del cliente.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/customers/{{customerId}}</code></div>
+<div class="req-name">Actualizar cliente</div>
+<p class="tip">Cambia el teléfono.</p>
+<pre class="body">{
+  &quot;name&quot;: &quot;PM Cliente {{runId}}&quot;,
+  &quot;taxId&quot;: &quot;PM-C-{{runId}}&quot;,
+  &quot;email&quot;: &quot;pm.cliente@example.com&quot;,
+  &quot;phone&quot;: &quot;4444-9999&quot;,
+  &quot;address&quot;: &quot;Zona 2, Guatemala&quot;,
+  &quot;genericConsumer&quot;: false,
+  &quot;active&quot;: true
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/customers/{{customerId}}</code></div>
+<div class="req-name">Eliminar cliente</div>
+<p class="tip">Baja lógica.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>05 · Inventario</h2>
+<p class="folder-desc">Existencias, capas FIFO, kardex, entradas/salidas manuales y ajustes.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/summary</code></div>
+<div class="req-name">Resumen de inventario</div>
+<p class="tip">Totales por sucursal.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/balances?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Balances por producto</div>
+<p class="tip">Existencia, reservado y disponible.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/layers?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Capas FIFO</div>
+<p class="tip">Capas con costo y cantidad restante.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/kardex?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Kardex</div>
+<p class="tip">Movimientos con saldo posterior.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/movements?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Movimientos</div>
+<p class="tip">Entradas y salidas con su origen.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/inventory/stock-in</code></div>
+<div class="req-name">Entrada manual de stock</div>
+<p class="tip">Entrada directa con costo (inventory.adjust).</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;locationId&quot;: null,
+  &quot;productId&quot;: &quot;{{productId}}&quot;,
+  &quot;quantity&quot;: 5,
+  &quot;unitCost&quot;: 8.0,
+  &quot;notes&quot;: &quot;Entrada desde Postman&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/inventory/stock-out</code></div>
+<div class="req-name">Salida manual de stock</div>
+<p class="tip">Salida directa (inventory.adjust).</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;locationId&quot;: null,
+  &quot;productId&quot;: &quot;{{productId}}&quot;,
+  &quot;quantity&quot;: 1,
+  &quot;notes&quot;: &quot;Salida desde Postman&quot;
+}</pre>
+</article>
+<h3>Ajustes</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/adjustments?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar ajustes</div>
+<p class="tip">Listado paginado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/inventory/adjustments</code></div>
+<div class="req-name">Crear ajuste</div>
+<p class="tip">Crea el ajuste en PENDING_APPROVAL.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;adjustmentNumber&quot;: &quot;PM-ADJ-{{runId}}&quot;,
+  &quot;adjustmentType&quot;: &quot;DAMAGE&quot;,
+  &quot;direction&quot;: &quot;OUT&quot;,
+  &quot;status&quot;: &quot;PENDING_APPROVAL&quot;,
+  &quot;notes&quot;: &quot;Ajuste creado desde Postman&quot;,
+  &quot;lines&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 1,
+      &quot;unitCost&quot;: 12.0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/adjustments/{{adjustmentId}}</code></div>
+<div class="req-name">Obtener ajuste</div>
+<p class="tip">Detalle con líneas.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/inventory/adjustments/{{adjustmentId}}</code></div>
+<div class="req-name">Actualizar ajuste</div>
+<p class="tip">Edita mientras esté pendiente.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;adjustmentNumber&quot;: &quot;PM-ADJ-{{runId}}&quot;,
+  &quot;adjustmentType&quot;: &quot;DAMAGE&quot;,
+  &quot;direction&quot;: &quot;OUT&quot;,
+  &quot;status&quot;: &quot;PENDING_APPROVAL&quot;,
+  &quot;notes&quot;: &quot;Ajuste actualizado desde Postman&quot;,
+  &quot;lines&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 1,
+      &quot;unitCost&quot;: 12.0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/inventory/adjustments/{{adjustmentId}}/approve</code></div>
+<div class="req-name">Aprobar ajuste</div>
+<p class="tip">Aplica el ajuste y genera movimiento de kardex.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/inventory/adjustments/{{adjustmentId}}/reject</code></div>
+<div class="req-name">Rechazar ajuste (ya aprobado)</div>
+<p class="tip">Demuestra la validación de estado: solo aplica sobre PENDING_APPROVAL.</p>
+<pre class="body">{
+  &quot;reason&quot;: &quot;Rechazo de prueba desde Postman&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/inventory/adjustments/{{adjustmentId}}/cancel</code></div>
+<div class="req-name">Cancelar ajuste (ya aprobado)</div>
+<p class="tip">Demuestra la validación de estado: solo aplica sobre PENDING_APPROVAL.</p>
+<pre class="body">{
+  &quot;reason&quot;: &quot;Cancelación de prueba desde Postman&quot;
+}</pre>
+</article>
+</section>
+<section class="folder"><h2>06 · Compras</h2>
+<p class="folder-desc">Crear DRAFT → confirmar (capa FIFO + kardex + auditoría) → anular con motivo. Una compra confirmada no se edita.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/purchases?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar compras</div>
+<p class="tip">Filtros: `status`, `fromDate`, `toDate`, `supplierId`.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/purchases</code></div>
+<div class="req-name">Crear compra (DRAFT)</div>
+<p class="tip">Requiere `supplierId` y `presentationId`.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;supplierId&quot;: &quot;{{supplierId}}&quot;,
+  &quot;purchaseNumber&quot;: &quot;PM-PUR-{{runId}}&quot;,
+  &quot;purchaseDate&quot;: &quot;{{today}}&quot;,
+  &quot;paymentMethod&quot;: &quot;TRANSFER&quot;,
+  &quot;paymentType&quot;: &quot;CASH&quot;,
+  &quot;status&quot;: &quot;DRAFT&quot;,
+  &quot;notes&quot;: &quot;Compra creada desde Postman&quot;,
+  &quot;details&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 10,
+      &quot;unitCostPresentation&quot;: 8.0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/purchases/{{purchaseId}}</code></div>
+<div class="req-name">Obtener compra</div>
+<p class="tip">Detalle con líneas.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/purchases/{{purchaseId}}</code></div>
+<div class="req-name">Actualizar compra (DRAFT)</div>
+<p class="tip">Solo mientras esté en borrador.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;supplierId&quot;: &quot;{{supplierId}}&quot;,
+  &quot;purchaseNumber&quot;: &quot;PM-PUR-{{runId}}&quot;,
+  &quot;purchaseDate&quot;: &quot;{{today}}&quot;,
+  &quot;paymentMethod&quot;: &quot;TRANSFER&quot;,
+  &quot;paymentType&quot;: &quot;CASH&quot;,
+  &quot;status&quot;: &quot;DRAFT&quot;,
+  &quot;notes&quot;: &quot;Compra actualizada desde Postman&quot;,
+  &quot;details&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 12,
+      &quot;unitCostPresentation&quot;: 8.0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/purchases/{{purchaseId}}/confirm</code></div>
+<div class="req-name">Confirmar compra</div>
+<p class="tip">Genera capa FIFO, suma existencia, kardex y auditoría.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/purchases/{{purchaseId}}/void</code></div>
+<div class="req-name">Anular compra</div>
+<p class="tip">Revierte la capa FIFO y deja la compra VOIDED.</p>
+<pre class="body">{
+  &quot;reason&quot;: &quot;Anulación de prueba desde Postman&quot;
+}</pre>
+</article>
+</section>
+<section class="folder"><h2>07 · Ventas</h2>
+<p class="folder-desc">CRUD del borrador y flujo POS: crear → confirmar (consume FIFO) → anular con motivo.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/sales?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar ventas</div>
+<p class="tip">Filtros: `status`, `fromDate`, `toDate`.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales</code></div>
+<div class="req-name">Crear venta (DRAFT)</div>
+<p class="tip">Usa `presentationId` (o `barcode`).</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;saleNumber&quot;: &quot;PM-SAL-A-{{runId}}&quot;,
+  &quot;paymentMethod&quot;: &quot;CASH&quot;,
+  &quot;status&quot;: &quot;DRAFT&quot;,
+  &quot;notes&quot;: &quot;Venta en borrador para el CRUD&quot;,
+  &quot;details&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 2,
+      &quot;unitPrice&quot;: 12.0,
+      &quot;discountAmount&quot;: 0,
+      &quot;taxAmount&quot;: 0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/sales/{{saleId}}</code></div>
+<div class="req-name">Obtener venta</div>
+<p class="tip">Detalle con líneas y costo FIFO.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/sales/{{saleId}}</code></div>
+<div class="req-name">Actualizar venta (DRAFT)</div>
+<p class="tip">Solo mientras esté en borrador.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;saleNumber&quot;: &quot;PM-SAL-A-{{runId}}&quot;,
+  &quot;paymentMethod&quot;: &quot;CASH&quot;,
+  &quot;status&quot;: &quot;DRAFT&quot;,
+  &quot;notes&quot;: &quot;Venta en borrador actualizada desde Postman&quot;,
+  &quot;details&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 2,
+      &quot;unitPrice&quot;: 12.0,
+      &quot;discountAmount&quot;: 0,
+      &quot;taxAmount&quot;: 0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/sales/{{saleId}}</code></div>
+<div class="req-name">Eliminar borrador</div>
+<p class="tip">Baja lógica de una venta en DRAFT (CRUD).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales</code></div>
+<div class="req-name">Crear venta para confirmar</div>
+<p class="tip">Requiere stock: ejecute antes `Confirmar compra`.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;saleNumber&quot;: &quot;PM-SAL-B-{{runId}}&quot;,
+  &quot;paymentMethod&quot;: &quot;CASH&quot;,
+  &quot;status&quot;: &quot;DRAFT&quot;,
+  &quot;notes&quot;: &quot;Venta para confirmar y anular&quot;,
+  &quot;details&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 2,
+      &quot;unitPrice&quot;: 12.0,
+      &quot;discountAmount&quot;: 0,
+      &quot;taxAmount&quot;: 0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales/{{saleId}}/confirm</code></div>
+<div class="req-name">Confirmar venta</div>
+<p class="tip">Consume FIFO, descuenta inventario y registra kardex.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales/{{saleId}}/cancel</code></div>
+<div class="req-name">Anular venta</div>
+<p class="tip">Requiere sales.cancel. `cancelDisposition`: RETURN_TO_STOCK | LOSS | DAMAGE.</p>
+<pre class="body">{
+  &quot;reason&quot;: &quot;Anulación de prueba desde Postman&quot;,
+  &quot;cancelDisposition&quot;: &quot;RETURN_TO_STOCK&quot;
+}</pre>
+</article>
+</section>
+<section class="folder"><h2>08 · Traslados</h2>
+<p class="folder-desc">Solicitar → aprobar (reserva stock) → despachar → recibir. La aprobación necesita existencia en origen.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/transfers?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar traslados</div>
+<p class="tip">Filtros: `status`, `sourceBranchId`, `destinationBranchId`.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/transfers/source-branches</code></div>
+<div class="req-name">Sucursales disponibles como origen</div>
+<p class="tip">Sucursales con stock para transferir.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/transfers</code></div>
+<div class="req-name">Crear traslado</div>
+<p class="tip">Requiere `branch2Id` (lo llena `GET Sucursales`).</p>
+<pre class="body">{
+  &quot;sourceBranchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;destinationBranchId&quot;: &quot;{{branch2Id}}&quot;,
+  &quot;transferNumber&quot;: &quot;PM-TRF-{{runId}}&quot;,
+  &quot;notes&quot;: &quot;Traslado creado desde Postman&quot;,
+  &quot;details&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityRequestedPresentation&quot;: 2
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/transfers/{{transferId}}</code></div>
+<div class="req-name">Obtener traslado</div>
+<p class="tip">Detalle con líneas y cantidades.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/transfers/{{transferId}}/approve</code></div>
+<div class="req-name">Aprobar traslado</div>
+<p class="tip">Reserva stock en origen (transfers.approve).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/transfers/{{transferId}}/reject</code></div>
+<div class="req-name">Rechazar traslado (ya aprobado)</div>
+<p class="tip">Solo desde REQUESTED; demuestra la validación de estado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/transfers/{{transferId}}/dispatch</code></div>
+<div class="req-name">Despachar traslado</div>
+<p class="tip">Pasa a IN_TRANSIT (transfers.dispatch).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/transfers/{{transferId}}/receive</code></div>
+<div class="req-name">Recibir traslado</div>
+<p class="tip">Recepción total o parcial: descuenta origen y suma destino.</p>
+<pre class="body">{
+  &quot;details&quot;: [
+    {
+      &quot;detailId&quot;: &quot;{{transferDetailId}}&quot;,
+      &quot;quantityReceivedBase&quot;: 2
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/transfers/{{transferId}}/cancel</code></div>
+<div class="req-name">Cancelar traslado (ya recibido)</div>
+<p class="tip">Solo antes de recibir; demuestra la validación de estado.</p>
+<pre class="body">{
+  &quot;reason&quot;: &quot;Cancelación de prueba desde Postman&quot;
+}</pre>
+</article>
+</section>
+<section class="folder"><h2>09 · Cierres de caja</h2>
+<p class="folder-desc">Cierre por sucursal y día. `preview` muestra el esperado antes de cerrar.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/cash-closures?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar cierres</div>
+<p class="tip">Listado paginado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/cash-closures/preview?branchId={{branchId}}&amp;closureDate={{today}}</code></div>
+<div class="req-name">Preview del día</div>
+<p class="tip">Totales esperados, anulaciones y descuentos.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/cash-closures</code></div>
+<div class="req-name">Crear cierre</div>
+<p class="tip">La fecha se calcula en el pre-request para respetar la regla de un cierre por usuario/sucursal/día.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;closureDate&quot;: &quot;{{closureDate}}&quot;,
+  &quot;countedTotal&quot;: 100.0,
+  &quot;notes&quot;: &quot;Cierre creado desde Postman&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/cash-closures/{{closureId}}</code></div>
+<div class="req-name">Obtener cierre</div>
+<p class="tip">Detalle del cierre.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/cash-closures/{{closureId}}/approve</code></div>
+<div class="req-name">Aprobar cierre</div>
+<p class="tip">CLOSED → APPROVED. Requiere cash_closures.approve.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/cash-closures/{{closureId}}/reopen</code></div>
+<div class="req-name">Reabrir cierre</div>
+<p class="tip">APPROVED → REOPENED.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/cash-closures/{{closureId}}/close</code></div>
+<div class="req-name">Cerrar caja</div>
+<p class="tip">REOPENED → CLOSED: registra el monto contado y calcula la diferencia.</p>
+<pre class="body">{
+  &quot;countedTotal&quot;: 100.0
+}</pre>
+</article>
+</section>
+<section class="folder"><h2>10 · Reportes</h2>
+<p class="folder-desc">Los seis reportes del sistema con filtros por fecha. En el frontend se exportan a CSV o se imprimen.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/reports/sales-summary?fromDate=2026-10-01T00:00:00Z&amp;toDate={{nowIso}}</code></div>
+<div class="req-name">Resumen de ventas</div>
+<p class="tip">Ventas por día, método de pago y descuentos.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/reports/purchases-summary?fromDate=2026-10-01&amp;toDate={{today}}</code></div>
+<div class="req-name">Resumen de compras</div>
+<p class="tip">Compras por proveedor y fecha (este endpoint recibe fecha simple YYYY-MM-DD).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/reports/products?fromDate=2026-10-01T00:00:00Z&amp;toDate={{nowIso}}</code></div>
+<div class="req-name">Reporte de productos</div>
+<p class="tip">Más vendidos, sin movimiento y stock bajo.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/reports/transfers-summary?fromDate=2026-10-01T00:00:00Z&amp;toDate={{nowIso}}</code></div>
+<div class="req-name">Resumen de traslados</div>
+<p class="tip">Traslados por estado y sucursal.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/reports/adjustments-summary?fromDate=2026-10-01T00:00:00Z&amp;toDate={{nowIso}}</code></div>
+<div class="req-name">Resumen de ajustes</div>
+<p class="tip">Ajustes por tipo y dirección.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/reports/cash-closures-summary?fromDate=2026-10-01&amp;toDate={{today}}</code></div>
+<div class="req-name">Resumen de cierres</div>
+<p class="tip">Cierres por sucursal y diferencias (este endpoint recibe fecha simple YYYY-MM-DD).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>11 · Integraciones externas</h2>
+<p class="folder-desc">Tres APIs reales (una por integrante) con su caso de éxito y su caso de error.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/integrations/geocode?q=Parque%20Central%20Cuilapa</code></div>
+<div class="req-name">Photon: geocodificar dirección</div>
+<p class="tip">Dirección → latitud/longitud (Christian Méndez).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/integrations/geocode?q=</code></div>
+<div class="req-name">Photon: sin dirección (error)</div>
+<p class="tip">Devuelve found=false con mensaje.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/products/barcode-lookup/3017620422003</code></div>
+<div class="req-name">Open Food Facts: código de barras</div>
+<p class="tip">Código → producto externo (Wilfero Delgado).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/products/barcode-lookup/0000000000000</code></div>
+<div class="req-name">Open Food Facts: inexistente (error)</div>
+<p class="tip">Devuelve found=false.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/integrations/exchange-rate?base=USD&amp;target=GTQ</code></div>
+<div class="req-name">Tipo de cambio USD→GTQ</div>
+<p class="tip">open.er-api.com (Fernando Palencia).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/integrations/exchange-rate?base=USD&amp;target=XXX</code></div>
+<div class="req-name">Tipo de cambio: moneda inválida (error)</div>
+<p class="tip">Devuelve available=false.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>12 · Usuarios y permisos</h2>
+<p class="folder-desc">CRUD de roles y usuarios, overrides por usuario y perfil propio.</p>
+<h3>Roles</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/roles</code></div>
+<div class="req-name">Listar roles</div>
+<p class="tip">Guarda `roleId` con el primer rol.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/permissions</code></div>
+<div class="req-name">Listar permisos</div>
+<p class="tip">Catálogo `module.action`.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/roles</code></div>
+<div class="req-name">Crear rol</div>
+<p class="tip">Crea un rol con 3 permisos y actualiza `roleId`.</p>
+<pre class="body">{
+  &quot;code&quot;: &quot;PM_ROLE_{{runId}}&quot;,
+  &quot;name&quot;: &quot;PM Rol {{runId}}&quot;,
+  &quot;description&quot;: &quot;Rol creado desde Postman&quot;,
+  &quot;permissionCodes&quot;: [
+    &quot;products.view&quot;,
+    &quot;sales.view&quot;,
+    &quot;inventory.view&quot;
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/roles/{{roleId}}</code></div>
+<div class="req-name">Obtener rol</div>
+<p class="tip">Detalle con permisos.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/roles/{{roleId}}</code></div>
+<div class="req-name">Actualizar rol</div>
+<p class="tip">Cambia la descripción y los permisos.</p>
+<pre class="body">{
+  &quot;code&quot;: &quot;PM_ROLE_{{runId}}&quot;,
+  &quot;name&quot;: &quot;PM Rol {{runId}}&quot;,
+  &quot;description&quot;: &quot;Rol creado desde Postman (editado)&quot;,
+  &quot;permissionCodes&quot;: [
+    &quot;products.view&quot;,
+    &quot;sales.view&quot;,
+    &quot;inventory.view&quot;
+  ]
+}</pre>
+</article>
+<h3>Usuarios</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/users?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Listar usuarios</div>
+<p class="tip">Listado paginado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/users</code></div>
+<div class="req-name">Crear usuario</div>
+<p class="tip">Usuario `pm{{runId}}` con el rol creado arriba.</p>
+<pre class="body">{
+  &quot;username&quot;: &quot;pm{{runId}}&quot;,
+  &quot;password&quot;: &quot;ChangeMe123!&quot;,
+  &quot;firstName&quot;: &quot;Postman&quot;,
+  &quot;lastName&quot;: &quot;Demo&quot;,
+  &quot;email&quot;: &quot;pm{{runId}}@example.com&quot;,
+  &quot;phone&quot;: null,
+  &quot;birthDate&quot;: null,
+  &quot;status&quot;: &quot;ACTIVE&quot;,
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;roleId&quot;: &quot;{{roleId}}&quot;,
+  &quot;permissionOverrides&quot;: []
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/users/{{newUserId}}</code></div>
+<div class="req-name">Obtener usuario</div>
+<p class="tip">Detalle del usuario creado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/users/{{newUserId}}</code></div>
+<div class="req-name">Actualizar usuario</div>
+<p class="tip">Nombres, teléfono y rol.</p>
+<pre class="body">{
+  &quot;username&quot;: &quot;pm{{runId}}&quot;,
+  &quot;firstName&quot;: &quot;Postman&quot;,
+  &quot;lastName&quot;: &quot;Demo (editado)&quot;,
+  &quot;email&quot;: &quot;pm{{runId}}@example.com&quot;,
+  &quot;phone&quot;: &quot;3333-3333&quot;,
+  &quot;birthDate&quot;: null,
+  &quot;roleId&quot;: &quot;{{roleId}}&quot;,
+  &quot;permissionOverrides&quot;: []
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/users/{{newUserId}}/activate</code></div>
+<div class="req-name">Activar usuario</div>
+<p class="tip">Vuelve a ACTIVE.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/users/{{newUserId}}/deactivate</code></div>
+<div class="req-name">Desactivar usuario</div>
+<p class="tip">Pasa a INACTIVE (baja lógica).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/users/{{newUserId}}/branch</code></div>
+<div class="req-name">Cambiar sucursal</div>
+<p class="tip">Traslada al usuario a la otra sucursal.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branch2Id}}&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/users/{{newUserId}}/password</code></div>
+<div class="req-name">Restablecer contraseña</div>
+<p class="tip">Asigna clave temporal (must_change_password).</p>
+<pre class="body">{
+  &quot;password&quot;: &quot;ChangeMe123!&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/users/{{newUserId}}</code></div>
+<div class="req-name">Eliminar usuario</div>
+<p class="tip">Baja lógica (estado DELETED).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<h3>Perfil propio</h3>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/users/me</code></div>
+<div class="req-name">Ver mi perfil</div>
+<p class="tip">Datos del usuario del token.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/users/me</code></div>
+<div class="req-name">Actualizar mi perfil</div>
+<p class="tip">Nombres, correo, teléfono y fecha de nacimiento.</p>
+<pre class="body">{
+  &quot;firstName&quot;: &quot;Admin&quot;,
+  &quot;lastName&quot;: &quot;Demo&quot;,
+  &quot;email&quot;: &quot;admin@demo.corpoviva.com&quot;,
+  &quot;phone&quot;: &quot;2222-0000&quot;,
+  &quot;birthDate&quot;: null
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/users/me/password</code></div>
+<div class="req-name">Cambiar mi contraseña (validación)</div>
+<p class="tip">Caso de error controlado: el backend rechaza repetir la contraseña actual. Para un cambio real use otra clave.</p>
+<pre class="body">{
+  &quot;currentPassword&quot;: &quot;{{password}}&quot;,
+  &quot;newPassword&quot;: &quot;{{password}}&quot;
+}</pre>
+</article>
+</section>
+<section class="folder"><h2>13 · Auditoría</h2>
+<p class="folder-desc">Bitácora de acciones sensibles (login, confirmaciones, anulaciones, ajustes, permisos).</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/audit-logs?page=1&amp;pageSize=20</code></div>
+<div class="req-name">Bitácora</div>
+<p class="tip">Filtros: `entityType`, `action`, `fromDate`, `toDate`. Requiere settings.view.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<h2 id="pos">Colección Ventas POS (19 requests)</h2>
+<p>Flujo autocontenido: elige un producto con stock, hace el CRUD del borrador, cobra y anula. Ejecutable de principio a fin.</p>
+<section class="folder"><h2>00 · Preparacion</h2>
+<p class="folder-desc">Login y seleccion automatica de un producto con stock real, para que el CRUD funcione en cualquier base.</p>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/auth/login</code></div>
+<div class="req-name">Login (guarda tokens)</div>
+<p class="tip">Usa las variables `tenantSlug`, `username` y `password` del environment. Guarda el token y genera el `runId` de la corrida.</p>
+<pre class="body">{
+  &quot;tenantSlug&quot;: &quot;{{tenantSlug}}&quot;,
+  &quot;username&quot;: &quot;{{username}}&quot;,
+  &quot;password&quot;: &quot;{{password}}&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/balances?page=1&amp;pageSize=100</code></div>
+<div class="req-name">Producto con stock disponible</div>
+<p class="tip">Toma el producto con mas existencia disponible y guarda `productId` y `availableBefore`.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/products/{{productId}}/presentations</code></div>
+<div class="req-name">Presentacion vendible del producto</div>
+<p class="tip">Elige la presentacion con factor 1 (o la menor) y guarda `presentationId`.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>01 · Crear (C)</h2>
+<p class="folder-desc">Alta de la venta en estado DRAFT.</p>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales</code></div>
+<div class="req-name">Crear venta (DRAFT)</div>
+<p class="tip">Guarda `saleId`. Requiere `sales.create`.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;saleNumber&quot;: &quot;POS-CRUD-{{runId}}&quot;,
+  &quot;paymentMethod&quot;: &quot;CASH&quot;,
+  &quot;status&quot;: &quot;DRAFT&quot;,
+  &quot;notes&quot;: &quot;Borrador creado desde Postman (paso C del CRUD)&quot;,
+  &quot;details&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 2,
+      &quot;unitPrice&quot;: 12.0,
+      &quot;discountAmount&quot;: 0,
+      &quot;taxAmount&quot;: 0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/sales/{{saleId}}</code></div>
+<div class="req-name">Leer la venta creada</div>
+<p class="tip">Confirma que la venta nace en borrador con sus lineas y totales.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>02 · Leer (R)</h2>
+<p class="folder-desc">Consulta por id y busqueda en el listado con filtros.</p>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/sales?page=1&amp;pageSize=20&amp;status=DRAFT&amp;query=POS-CRUD-{{runId}}</code></div>
+<div class="req-name">Listar ventas (filtro por estado y numero)</div>
+<p class="tip">Filtros: `status`, `query`, `branchId`, `paymentMethod`, fechas.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>03 · Actualizar (U)</h2>
+<p class="folder-desc">Solo se puede editar mientras la venta esta en DRAFT.</p>
+<article class="req"><div class="req-head"><span class="m put">PUT</span><code>/api/v1/sales/{{saleId}}</code></div>
+<div class="req-name">Actualizar venta (cantidad 3 y pago con tarjeta)</div>
+<p class="tip">Cambia cantidad, notas y metodo de pago de la linea.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;saleNumber&quot;: &quot;POS-CRUD-{{runId}}&quot;,
+  &quot;paymentMethod&quot;: &quot;CARD&quot;,
+  &quot;status&quot;: &quot;DRAFT&quot;,
+  &quot;notes&quot;: &quot;Borrador actualizado: cantidad 3 y pago con tarjeta (paso U del CRUD)&quot;,
+  &quot;details&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 3,
+      &quot;unitPrice&quot;: 12.0,
+      &quot;discountAmount&quot;: 0,
+      &quot;taxAmount&quot;: 0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/sales/{{saleId}}</code></div>
+<div class="req-name">Verificar el cambio</div>
+<p class="tip">Relee la venta para comprobar que el cambio quedo guardado.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>04 · Eliminar (D)</h2>
+<p class="folder-desc">Baja logica de un borrador. No se puede eliminar una venta confirmada.</p>
+<article class="req"><div class="req-head"><span class="m delete">DELETE</span><code>/api/v1/sales/{{saleId}}</code></div>
+<div class="req-name">Eliminar borrador</div>
+<p class="tip">Requiere `sales.create`.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/sales/{{saleId}}</code></div>
+<div class="req-name">Verificar que ya no existe</div>
+<p class="tip">Caso esperado: 404. Si devuelve 200, la baja no se aplico.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>05 · Cobrar en el POS (confirmar)</h2>
+<p class="folder-desc">Flujo real del POS: crear, confirmar (consume FIFO), verificar stock y kardex.</p>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales</code></div>
+<div class="req-name">Crear venta para cobrar</div>
+<p class="tip">Guarda `saleId2` y `saleDetailId` (el kardex usa el id del detalle como `sourceId`).</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;saleNumber&quot;: &quot;POS-COBRO-{{runId}}&quot;,
+  &quot;paymentMethod&quot;: &quot;CASH&quot;,
+  &quot;status&quot;: &quot;DRAFT&quot;,
+  &quot;notes&quot;: &quot;Venta para cobrar en el POS&quot;,
+  &quot;details&quot;: [
+    {
+      &quot;presentationId&quot;: &quot;{{presentationId}}&quot;,
+      &quot;quantityPresentation&quot;: 1,
+      &quot;unitPrice&quot;: 12.0,
+      &quot;discountAmount&quot;: 0,
+      &quot;taxAmount&quot;: 0
+    }
+  ]
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/balances?page=1&amp;pageSize=10&amp;productId={{productId}}&amp;branchId={{branchId}}</code></div>
+<div class="req-name">Stock antes del cobro</div>
+<p class="tip">Guarda `onHandBefore` (disponible antes de confirmar).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales/{{saleId2}}/confirm</code></div>
+<div class="req-name">Confirmar venta (cobrar)</div>
+<p class="tip">Descuenta inventario consumiendo las capas FIFO mas antiguas y escribe el kardex `SALE_OUT`.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/balances?page=1&amp;pageSize=10&amp;productId={{productId}}&amp;branchId={{branchId}}</code></div>
+<div class="req-name">Stock despues del cobro</div>
+<p class="tip">Comprueba el descuento en unidad base (cantidad x factor de conversion).</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/kardex?page=1&amp;pageSize=20&amp;productId={{productId}}&amp;branchId={{branchId}}</code></div>
+<div class="req-name">Kardex: movimiento SALE_OUT</div>
+<p class="tip">Trazabilidad: cada venta confirmada deja su movimiento en el kardex.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>06 · Anular venta</h2>
+<p class="folder-desc">Requiere `sales.cancel` y motivo obligatorio; define que pasa con la mercaderia.</p>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales/{{saleId2}}/cancel</code></div>
+<div class="req-name">Anular venta (devuelve a inventario)</div>
+<p class="tip">`cancelDisposition`: RETURN_TO_STOCK | LOSS | DAMAGE.</p>
+<pre class="body">{
+  &quot;reason&quot;: &quot;Prueba de anulacion desde Postman&quot;,
+  &quot;cancelDisposition&quot;: &quot;RETURN_TO_STOCK&quot;
+}</pre>
+</article>
+<article class="req"><div class="req-head"><span class="m get">GET</span><code>/api/v1/inventory/kardex?page=1&amp;pageSize=20&amp;productId={{productId}}&amp;branchId={{branchId}}</code></div>
+<div class="req-name">Kardex: movimiento SALE_CANCEL_IN</div>
+<p class="tip">Si la disposicion fuera LOSS o DAMAGE, el movimiento seria de ajuste, no de devolucion.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+</section>
+<section class="folder"><h2>07 · Validaciones (errores esperados)</h2>
+<p class="folder-desc">No cuentan como fallo: la coleccion comprueba que el backend rechaza operaciones invalidas.</p>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales/{{saleId2}}/confirm</code></div>
+<div class="req-name">Confirmar una venta anulada</div>
+<p class="tip">Esperado 400: una venta cancelada no se puede volver a cobrar.</p>
+<p class="nobody">Sin body (usa el token del login).</p>
+</article>
+<article class="req"><div class="req-head"><span class="m post">POST</span><code>/api/v1/sales</code></div>
+<div class="req-name">Crear venta sin lineas</div>
+<p class="tip">Esperado 400: no se confirma una venta sin productos.</p>
+<pre class="body">{
+  &quot;branchId&quot;: &quot;{{branchId}}&quot;,
+  &quot;saleNumber&quot;: &quot;POS-VACIA-{{runId}}&quot;,
+  &quot;paymentMethod&quot;: &quot;CASH&quot;,
+  &quot;status&quot;: &quot;DRAFT&quot;,
+  &quot;notes&quot;: &quot;Debe ser rechazada por validacion&quot;,
+  &quot;details&quot;: []
+}</pre>
+</article>
+</section>
+
+<h2 id="newman">Ejecutar con Newman (sin abrir Postman)</h2>
+<pre>cd D:\DEVELOP\vivent\entregable-academico
+
+# Colección completa (128 requests / 242 aserciones)
+npx newman run postman/Vivent.postman_collection.json -e postman/Vivent-Local.postman_environment.json
+
+# Solo ventas POS (19 requests / 65 aserciones)
+npx newman run postman/Vivent-Ventas-POS.postman_collection.json -e postman/Vivent-Local.postman_environment.json</pre>
+<div class="callout"><strong>Resultado esperado:</strong> 0 fallos en ambas. Si falla el login, revisa que el environment tenga <code>baseUrl</code> correcto y que el stack esté arriba.</div>
+
+</main>
+</div>
+</body>
+</html>
