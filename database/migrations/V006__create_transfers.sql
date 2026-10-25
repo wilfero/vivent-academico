@@ -1,0 +1,43 @@
+CREATE TABLE transfers (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id uuid NOT NULL REFERENCES companies (id),
+    source_branch_id uuid NOT NULL REFERENCES branches (id),
+    destination_branch_id uuid NOT NULL REFERENCES branches (id),
+    transfer_number varchar(50) NOT NULL,
+    status varchar(25) NOT NULL DEFAULT 'REQUESTED',
+    requested_by uuid NOT NULL REFERENCES users (id),
+    approved_by uuid REFERENCES users (id),
+    dispatched_by uuid REFERENCES users (id),
+    received_by uuid REFERENCES users (id),
+    cancelled_by uuid REFERENCES users (id),
+    requested_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    approved_at timestamptz,
+    dispatched_at timestamptz,
+    received_at timestamptz,
+    cancelled_at timestamptz,
+    cancel_reason text,
+    notes text,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_transfers_company_number UNIQUE (company_id, transfer_number),
+    CONSTRAINT ck_transfers_status CHECK (status IN ('REQUESTED', 'APPROVED', 'REJECTED', 'IN_TRANSIT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED')),
+    CONSTRAINT ck_transfers_branches CHECK (source_branch_id <> destination_branch_id)
+);
+
+CREATE TABLE transfer_details (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    transfer_id uuid NOT NULL REFERENCES transfers (id),
+    product_id uuid NOT NULL REFERENCES products (id),
+    presentation_id uuid NOT NULL REFERENCES product_presentations (id),
+    quantity_requested_presentation numeric(19,6) NOT NULL,
+    conversion_factor numeric(19,6) NOT NULL,
+    quantity_requested_base numeric(19,6) NOT NULL,
+    quantity_approved_base numeric(19,6) NOT NULL DEFAULT 0,
+    quantity_received_base numeric(19,6) NOT NULL DEFAULT 0,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_transfer_details_requested_presentation CHECK (quantity_requested_presentation > 0),
+    CONSTRAINT ck_transfer_details_conversion_factor CHECK (conversion_factor > 0),
+    CONSTRAINT ck_transfer_details_requested_base CHECK (quantity_requested_base > 0),
+    CONSTRAINT ck_transfer_details_quantity_approved_base CHECK (quantity_approved_base >= 0),
+    CONSTRAINT ck_transfer_details_quantity_received_base CHECK (quantity_received_base >= 0)
+);

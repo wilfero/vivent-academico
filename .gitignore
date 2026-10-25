@@ -1,0 +1,31 @@
+# Dependencias y builds
+node_modules/
+.next/
+target/
+dist/
+out/
+
+# Entornos y secretos
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Volúmenes y datos locales
+*.log
+pgdata/
+
+# IDE y sistema
+.idea/
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+*.iml
+.DS_Store
+Thumbs.db
+
+# Cobertura y cachés
+coverage/
+*.class

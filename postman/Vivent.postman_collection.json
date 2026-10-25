@@ -1,0 +1,230 @@
+{
+  "info": {
+    "name": "Vivent académico — API",
+    "description": "Colección de Postman para la API de Vivent (variante académica).\n\nAutenticación: POST /api/v1/auth/login con tenantSlug=demo. Usar el token devuelto en la variable de colección {{accessToken}} (header Authorization: Bearer).\n\nCuentas demo (contraseña ChangeMe123!): admin (COMPANY_ADMIN), seller (SELLER), inventory (WAREHOUSE_USER), auditor (AUDITOR).\n\nCada carpeta incluye ejemplos de éxito y error (errores usan ApiResponse con success=false, message y errorCode).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "tenantSlug", "value": "demo" },
+    { "key": "accessToken", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Público",
+      "item": [
+        {
+          "name": "Tenant config (público)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/public/tenant-config?subdomain={{tenantSlug}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login (éxito)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tenantSlug\": \"{{tenantSlug}}\",\n  \"username\": \"admin\",\n  \"password\": \"ChangeMe123!\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Devuelve JWT + permisos. Registrar el token en {{accessToken}}."
+          }
+        },
+        {
+          "name": "Login (error: credenciales inválidas)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tenantSlug\": \"{{tenantSlug}}\",\n  \"username\": \"admin\",\n  \"password\": \"incorrecta\"\n}" },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Error esperado: 401/400 INVALID_CREDENTIALS (success=false)."
+          }
+        },
+        {
+          "name": "Sesión actual (/auth/me)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/auth/me" }
+        }
+      ]
+    },
+    {
+      "name": "Catálogo",
+      "item": [
+        {
+          "name": "Productos (listado paginado)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products?page=0&size=20" }
+        },
+        {
+          "name": "Producto por barcode",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/by-barcode/740000000001" }
+        },
+        {
+          "name": "Categorías",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/categories" }
+        },
+        {
+          "name": "Presentaciones",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/product-presentations" }
+        }
+      ]
+    },
+    {
+      "name": "Inventario",
+      "item": [
+        {
+          "name": "Resumen de inventario",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/inventory/summary" }
+        },
+        {
+          "name": "Balances",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/inventory/balances?page=0&size=20" }
+        },
+        {
+          "name": "Capas FIFO",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/inventory/layers" }
+        },
+        {
+          "name": "Kardex",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/inventory/kardex" }
+        }
+      ]
+    },
+    {
+      "name": "Compras",
+      "item": [
+        {
+          "name": "Listado de compras",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/purchases?status=CONFIRMED&fromDate=2026-10-01&toDate=2026-10-25" }
+        },
+        {
+          "name": "Confirmar compra (éxito)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/purchases/{{purchaseId}}/confirm",
+            "description": "Requiere permiso purchases.confirm. Crea capas FIFO, kardex y audit CONFIRM."
+          }
+        },
+        {
+          "name": "Confirmar compra (error: ya confirmada)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/purchases/{{purchaseId}}/confirm",
+            "description": "Error esperado: estado inválido de compra (INVALID_PURCHASE_STATUS)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ventas",
+      "item": [
+        {
+          "name": "Listado de ventas",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/sales?status=CONFIRMED" }
+        },
+        {
+          "name": "Confirmar venta (éxito)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId}}/confirm",
+            "description": "Consume FIFO y descuenta inventario; audit CONFIRM."
+          }
+        },
+        {
+          "name": "Anular venta (error: sin motivo)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"\"\n}" },
+            "url": "{{baseUrl}}/api/v1/sales/{{saleId}}/cancel",
+            "description": "Error esperado: VALIDATION_ERROR (motivo obligatorio)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Traslados",
+      "item": [
+        {
+          "name": "Listado de traslados",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/transfers?status=RECEIVED" }
+        },
+        {
+          "name": "Recepción parcial (éxito)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"details\": [\n    { \"detailId\": \"{{transferDetailId}}\", \"quantityReceivedBase\": 6 }\n  ]\n}" },
+            "url": "{{baseUrl}}/api/v1/transfers/{{transferId}}/receive"
+          }
+        },
+        {
+          "name": "Recepción vacía (error)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"details\": []\n}" },
+            "url": "{{baseUrl}}/api/v1/transfers/{{transferId}}/receive",
+            "description": "Error esperado: VALIDATION_ERROR (detalles requeridos)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cierres de caja",
+      "item": [
+        {
+          "name": "Listado de cierres",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/cash-closures" }
+        },
+        {
+          "name": "Preview del cierre del día",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/cash-closures/preview?branchId={{branchId}}&closureDate=2026-10-25" }
+        },
+        {
+          "name": "Crear cierre (duplicado — error)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"closureDate\": \"2026-10-25\",\n  \"countedTotal\": 0\n}" },
+            "url": "{{baseUrl}}/api/v1/cash-closures",
+            "description": "Error esperado: cierre duplicado (usuario/sucursal/fecha)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "item": [
+        {
+          "name": "Resumen de ventas",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/reports/sales-summary?fromDate=2026-10-01&toDate=2026-10-25" }
+        },
+        {
+          "name": "Resumen de compras",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/reports/purchases-summary" }
+        },
+        {
+          "name": "Productos (top/movimiento/stock)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/reports/products" }
+        }
+      ]
+    },
+    {
+      "name": "Auditoría",
+      "item": [
+        {
+          "name": "Bitácora (settings.view)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/audit-logs?entityType=sale" }
+        }
+      ]
+    }
+  ]
+}

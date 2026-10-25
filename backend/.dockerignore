@@ -1,0 +1,14 @@
+.git
+.gitignore
+.idea
+.vscode
+target
+build
+*.iml
+*.iws
+*.ipr
+.DS_Store
+HELP.md
+README.md
+compose.yml
+compose.yaml

@@ -1,0 +1,47 @@
+# Stack completo: PostgreSQL + backend Spring Boot + frontend Next.js
+# Uso: cd docker ; docker compose -f compose.local.yml up -d --build
+# Primer arranque: el backend aplica migraciones y seeds de Flyway automáticamente.
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: vivent-academico-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: vivent
+      POSTGRES_USER: vivent
+      POSTGRES_PASSWORD: vivent
+    volumes:
+      - vivent_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vivent -d vivent"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ../backend
+    container_name: vivent-academico-backend
+    ports:
+      - "8080:8080"
+    environment:
+      VIVENT_DB_URL: jdbc:postgresql://db:5432/vivent
+      VIVENT_DB_USERNAME: vivent
+      VIVENT_DB_PASSWORD: vivent
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ../frontend
+    container_name: vivent-academico-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      NEXT_PUBLIC_DEFAULT_TENANT: demo
+    depends_on:
+      - backend
+
+volumes:
+  vivent_pgdata:

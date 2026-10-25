@@ -1,0 +1,18 @@
+package com.corpoviva.vivent.inventory.entity;
+
+public enum StockMovementType {
+	PURCHASE_IN,
+	SALE_OUT,
+	SALE_CANCEL_IN,
+	PURCHASE_VOID_OUT,
+	TRANSFER_RESERVED,
+	TRANSFER_OUT,
+	TRANSFER_IN,
+	ADJUSTMENT_IN,
+	ADJUSTMENT_OUT,
+	STOCK_COUNT_IN,
+	STOCK_COUNT_OUT,
+	LOSS_OUT,
+	DAMAGE_OUT,
+	EXPIRED_OUT
+}
