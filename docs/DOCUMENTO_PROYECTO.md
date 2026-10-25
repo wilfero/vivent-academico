@@ -667,10 +667,13 @@ La colección incluye a propósito casos de error para demostrar que el backend 
 | Request | Respuesta esperada | Regla que demuestra |
 | --- | --- | --- |
 | Login con clave incorrecta | `401 INVALID_CREDENTIALS` | Autenticación por tenant + usuario. |
-| Refresh reutilizado | `401` | Rotación y revocación de refresh tokens. |
-| Rechazar ajuste ya aprobado | `400 INVALID_*_STATUS` | Máquina de estados del ajuste. |
-| Cancelar traslado ya recibido | `400 INVALID_TRANSFER_STATUS` | Máquina de estados del traslado. |
+| Rechazar ajuste ya aprobado | `400` con `success=false` | Máquina de estados del ajuste. |
+| Cancelar ajuste ya aprobado | `400` con `success=false` | Solo un ajuste pendiente se puede cancelar. |
+| Rechazar traslado ya aprobado | `400` con `success=false` | Máquina de estados del traslado. |
+| Cancelar traslado ya recibido | `400` con `success=false` | Un traslado recibido no se cancela. |
 | Cambiar contraseña por la misma | `400 VALIDATION_ERROR` | Política de contraseñas. |
+
+Además, las tres integraciones externas devuelven un error **controlado** (HTTP 200 con `found`/`available` en `false`), porque el sistema no debe romperse si el servicio de terceros falla: Photon sin dirección, Open Food Facts con un código inexistente y tipo de cambio con una moneda inválida.
 
 Resultado verificado de la corrida completa (ejecutada dos veces seguidas sobre la misma base para comprobar que es repetible):
 
@@ -708,6 +711,9 @@ Las evidencias de estas corridas están en `docs/evidencias/evidencias_pruebas.m
 - `postman/Vivent.postman_collection.json` — colección con 128 requests (CRUD completo).
 - `postman/Vivent-Local.postman_environment.json` — environment con URL y credenciales demo.
 - `postman/README.md` — instalación, orden de ejecución y tabla de variables.
+- `GUIA_EXPOSICION_CHRISTIAN.md` — guion, Postman, código y rúbrica del integrante 1.
+- `GUIA_EXPOSICION_WILFERO.md` — guion, Postman, código y rúbrica del integrante 2.
+- `GUIA_EXPOSICION_FERNANDO.md` — guion, Postman, código y rúbrica del integrante 3.
 
 ---
 
