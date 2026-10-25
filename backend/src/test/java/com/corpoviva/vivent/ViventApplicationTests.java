@@ -3,7 +3,13 @@ package com.corpoviva.vivent;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.corpoviva.vivent.auth.service.AuthService;
+import com.corpoviva.vivent.auth.service.RefreshTokenService;
 
 import com.corpoviva.vivent.branches.entity.BranchEntity;
 import com.corpoviva.vivent.branches.repository.BranchRepository;
@@ -82,6 +88,8 @@ class ViventApplicationTests {
 	private final SaleRepository saleRepository;
 	private final SaleDetailRepository saleDetailRepository;
 	private final SaleComboLineRepository saleComboLineRepository;
+	private final RefreshTokenService refreshTokenService;
+	private final AuthService authService;
 
 	@Autowired
 	ViventApplicationTests(
@@ -105,7 +113,9 @@ class ViventApplicationTests {
 		SaleService saleService,
 		SaleRepository saleRepository,
 		SaleDetailRepository saleDetailRepository,
-		SaleComboLineRepository saleComboLineRepository
+		SaleComboLineRepository saleComboLineRepository,
+		RefreshTokenService refreshTokenService,
+		AuthService authService
 	) {
 		this.companyRepository = companyRepository;
 		this.platformCompanyService = platformCompanyService;
@@ -128,10 +138,34 @@ class ViventApplicationTests {
 		this.saleRepository = saleRepository;
 		this.saleDetailRepository = saleDetailRepository;
 		this.saleComboLineRepository = saleComboLineRepository;
+		this.refreshTokenService = refreshTokenService;
+		this.authService = authService;
 	}
 
 	@Test
 	void contextLoads() {
+	}
+
+	@Test
+	void refreshTokenRotatesAndInvalidatesThePreviousToken() {
+		var company = companyRepository.findByTenantSlugAndDeletedAtIsNull("demo").orElseThrow();
+		var user = userRepository.findCompanyAdminsByCompanyId(company.getId()).getFirst();
+		var issued = refreshTokenService.issue(user, "127.0.0.1", "JUnit");
+
+		// consume() ends its transaction and the caller keeps using the detached
+		// user, so this also guards the lazy-initialization regression found when
+		// the stack ran in Docker.
+		var consumedUser = refreshTokenService.consume(issued.refreshToken());
+		var session = authService.renewSession(consumedUser, "127.0.0.1", "JUnit");
+
+		assertNotNull(session.accessToken());
+		assertNotNull(session.refreshToken());
+		assertNotEquals(issued.refreshToken(), session.refreshToken());
+		assertThrows(RuntimeException.class, () -> refreshTokenService.consume(issued.refreshToken()));
+
+		// The rotated token must be persisted, otherwise logout and the next
+		// renewal would fail with INVALID_TOKEN (regression found in Docker).
+		assertNotNull(refreshTokenService.consume(session.refreshToken()).getId());
 	}
 
 	@Test
@@ -191,7 +225,9 @@ class ViventApplicationTests {
 		var authenticatedUser = companyAdmin(company.getId(), user.getBranch().getId(), user.getId());
 		var session = userProfileService.changePassword(
 			authenticatedUser,
-			new ChangeOwnPasswordRequest(currentPassword, newPassword)
+			new ChangeOwnPasswordRequest(currentPassword, newPassword),
+			"127.0.0.1",
+			"JUnit"
 		);
 
 		assertFalse(user.isMustChangePassword());

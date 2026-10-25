@@ -91,16 +91,26 @@ Reglas de seguridad:
 
 ## 7. APIs externas (por integrante)
 
-Documentación completa de las tres integraciones con ejemplos de éxito y error: ver `APIS_EXTERNAS.md`.
+| Integración | Integrante | Servicio | Endpoint interno | Variable de configuración |
+| --- | --- | --- | --- | --- |
+| Geocodificación | Christian Méndez | Photon | `GET /api/v1/integrations/geocode?q=...` | `VIVENT_INTEGRATIONS_PHOTON_BASE_URL` (por defecto `https://photon.komoot.io`) |
+| Código de barras | Wilfero Delgado | Open Food Facts | `GET /api/v1/products/barcode-lookup/{barcode}` | `VIVENT_INTEGRATIONS_OPENFOODFACTS_BASE_URL` (por defecto `https://world.openfoodfacts.org`) |
+| Tipo de cambio | Fernando Palencia | open.er-api.com | `GET /api/v1/integrations/exchange-rate?base=USD&target=GTQ` | `VIVENT_INTEGRATIONS_EXCHANGERATE_BASE_URL` (por defecto `https://open.er-api.com`) |
+
+Características comunes: timeout de 4 s, caché en memoria (10 minutos para geocodificación y código de barras, 1 hora para tipo de cambio), cabecera `User-Agent` identificable y manejo explícito de error: la API responde `success=true` con `found=false` o `available=false` y un `message` comprensible, para que la interfaz decida cómo continuar sin romper el proceso.
+
+- Documentación con ejemplos de éxito y error: `APIS_EXTERNAS.md`.
+- Documentación interactiva de toda la API: `http://localhost:8080/swagger-ui/index.html` (público para revisión; el resto de la API exige token).
+- La integración de correo del producto comercial (Nabrix Email) no forma parte de esta entrega porque requiere credenciales privadas de un proveedor.
 
 ## 8. Pruebas
 
 ```bash
-cd backend && ./mvnw test          # 25 pruebas de integración (Testcontainers + PostGIS)
+cd backend && ./mvnw test          # 9 pruebas de integración contra PostgreSQL (Docker en :5433)
 cd frontend && pnpm exec tsc --noEmit && NEXT_PRIVATE_BUILD_WORKER=1 pnpm run build
 ```
 
-Evidencias y casos: ver `evidencias/EVIDENCIAS_PRUEBAS.md`.
+Evidencias y casos: ver `evidencias/evidencias_pruebas.md`.
 
 ## 9. Publicación en la nube
 

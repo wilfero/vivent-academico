@@ -1,6 +1,11 @@
 # Stack completo: PostgreSQL + backend Spring Boot + frontend Next.js
-# Uso: cd docker ; docker compose -f compose.local.yml up -d --build
-# Primer arranque: el backend aplica migraciones y seeds de Flyway automáticamente.
+# Uso local (misma PC):      cd docker ; docker compose -f compose.local.yml up -d --build
+# Uso en servidor con Docker: docker compose -f compose.local.yml up -d --build
+#                             y definir NEXT_PUBLIC_API_BASE_URL con la URL pública de la API.
+#
+# Primer arranque: el backend aplica migraciones (V*) y seeds (S*) de Flyway solo.
+# Si NEXT_PUBLIC_API_BASE_URL queda vacío, el frontend usa http://<host-actual>:8080
+# (funciona en localhost y en red local sin recompilar).
 services:
   db:
     image: postgres:17-alpine
@@ -28,18 +33,25 @@ services:
       VIVENT_DB_URL: jdbc:postgresql://db:5432/vivent
       VIVENT_DB_USERNAME: vivent
       VIVENT_DB_PASSWORD: vivent
+      VIVENT_JWT_SECRET: ${VIVENT_JWT_SECRET:-ChangeThisLocalDevelopmentSecretKeyForJwtOnly1234567890}
     depends_on:
       db:
         condition: service_healthy
 
   frontend:
-    build: ../frontend
+    build:
+      context: ../frontend
+      # Next.js inyecta NEXT_PUBLIC_* en tiempo de COMPILACIÓN, por eso va como
+      # build arg (no solo como environment). Vacío = autodetección del host.
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        NEXT_PUBLIC_DEFAULT_TENANT: ${NEXT_PUBLIC_DEFAULT_TENANT:-demo}
     container_name: vivent-academico-frontend
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
-      NEXT_PUBLIC_DEFAULT_TENANT: demo
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+      NEXT_PUBLIC_DEFAULT_TENANT: ${NEXT_PUBLIC_DEFAULT_TENANT:-demo}
     depends_on:
       - backend
 

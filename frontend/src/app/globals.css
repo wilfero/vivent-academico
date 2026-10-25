@@ -193,3 +193,33 @@ body {
     }
   }
 }
+
+/* Report printing: hide navigation/chrome so the report (with its active
+   filters) prints on its own, then the browser dialog can save it as PDF. */
+@media print {
+  [data-print-hide],
+  .print\:hidden,
+  aside,
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+  table {
+    font-size: 10pt;
+  }
+
+  .fade-up {
+    animation: none !important;
+  }
+}

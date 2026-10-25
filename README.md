@@ -55,6 +55,18 @@ cd ../frontend && pnpm install && pnpm dev
 
 Instrucciones completas (incluye usuarios demo, flujo de demostración, variables de entorno y solución de problemas): [`INSTRUCCIONES_LOCAL.md`](INSTRUCCIONES_LOCAL.md).
 
+> **En otra PC o en un servidor:** el mismo comando funciona siempre que Docker esté instalado y los puertos 3000/8080 estén libres. El frontend deduce la URL de la API del host desde el que se abre (`localhost` o IP de la red). Si se publica con un dominio, compilar con `NEXT_PUBLIC_API_BASE_URL=https://api.midominio.com` (Next.js inyecta esa variable en tiempo de build). Detalle en `INSTRUCCIONES_LOCAL.md` §3.1.
+
+## Integraciones externas (una por integrante)
+
+| Integración | Integrante | Endpoint | Función en el negocio |
+| --- | --- | --- | --- |
+| Photon (geocodificación) | Christian Méndez | `GET /api/v1/integrations/geocode?q=...` | Dirección → coordenadas para rutas de entrega |
+| Open Food Facts (barcode) | Wilfero Delgado | `GET /api/v1/products/barcode-lookup/{barcode}` | Si el código no existe, el POS ofrece registrar el producto y continuar la venta |
+| open.er-api.com (tipo de cambio) | Fernando Palencia | `GET /api/v1/integrations/exchange-rate?base=USD&target=GTQ` | Tasa de referencia para costos en moneda extranjera |
+
+Ejemplos de éxito y error en [`docs/APIS_EXTERNAS.md`](docs/APIS_EXTERNAS.md); las tres están en la carpeta “Integración externa” de Postman.
+
 ## URLs locales
 
 ```text
@@ -73,7 +85,7 @@ Contraseña compartida: `ChangeMe123!`
 | `admin` | COMPANY_ADMIN |
 | `seller` | SELLER |
 | `inventory` | WAREHOUSE_USER |
-| `transfers_origin` | MANAGER |
+| `transfers_origin` | WAREHOUSE_USER |
 | `transfers_destination` | WAREHOUSE_USER |
 | `auditor` | AUDITOR |
 

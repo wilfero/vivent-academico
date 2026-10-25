@@ -95,7 +95,8 @@ public class AuthService {
 		);
 	}
 
-	@Transactional(readOnly = true)
+	// Not read-only: renewing also persists a brand-new refresh token (rotation).
+	@Transactional
 	public LoginResponse renewSession(UserEntity user, String ipAddress, String userAgent) {
 		validateCompany(user.getCompany());
 		validateSubscription(user.getCompany().getId());

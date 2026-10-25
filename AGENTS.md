@@ -24,7 +24,8 @@ Este repositorio es la **variante académica** del proyecto Vivent para el curso
 ```text
 backend/     Spring Boot 4 (Java 25) — módulos: auth, tenant, companies, branches,
              users, permissions, products, inventory, purchases, sales, transfers,
-             adjustments, closures, reports, audit, subscriptions, platform, common, security
+             adjustments, closures, reports, audit, subscriptions, platform,
+             integrations (Photon, Open Food Facts), common, security
 frontend/    Next.js 16 — src/{app,components,features,lib,messages}
 database/    database/migrations (V*.sql) y database/seed (S*.sql)
 docker/      compose.db.yml y compose.local.yml

@@ -7,13 +7,13 @@ Reglas de uso: registrar aquí hechos críticos, decisiones y pendientes por tar
 
 | Hecho | Detalle |
 | --- | --- |
-| Origen del código | Variante académica de `JorgeJr1904/vivent-back` + `vivent-front` (branch `dev` vigente al 2026-10-25). Los repos originales **no se modifican** |
+| Origen del código | Variante académica de `JorgeJr1904/vivent-back` + `vivent-front` (rama `main` al 2026-10-25). Los repos originales **no se modifican** |
 | Despliegue comercial | `deploy/` + corpoviva.com es producto separado; esta variante no lo afecta |
 | Puertos locales | DB 5433 (vivent/vivent) · backend 8080 · frontend 3000 |
-| Cuentas demo | admin, seller, inventory, transfers_origin, transfers_destination, auditor — contraseña `ChangeMe123!` (BCrypt en BD, seed S20261024000100) |
-| Migraciones/seeds | 34 migraciones + 21 seeds en `dev`; nuevas con timestamp UTC 14 dígitos, idempotentes, out-of-order=true |
-| PostGIS | Habilitado por `V20261023191207__enable_postgis_and_commerce_foundations.sql` (geocodificación Photon con caché) |
-| pruebas | 25 `@Test` de integración en `ViventApplicationTests` (Testcontainers + PostGIS) |
+| Cuentas demo | admin (COMPANY_ADMIN), seller (SELLER), inventory / transfers_origin / transfers_destination (WAREHOUSE_USER), auditor (AUDITOR) — contraseña `ChangeMe123!` (BCrypt en BD, seed S008) |
+| Migraciones/seeds | 19 migraciones (V001–V018 + refresh tokens) y 10 seeds (S001–S009 + seed académico); Flyway aplica seeds con prefijo `S` e historial propio `flyway_seed_history` |
+| Pruebas | 8 `@Test` de integración en `ViventApplicationTests` (compras/FIFO, anulación exacta, combos, cambio de sucursal, cambio de contraseña); requieren PostgreSQL en `localhost:5433` |
+| PostGIS | No se usa en esta copia; Photon se integra por REST con caché en memoria |
 
 ## Decisiones
 
@@ -29,20 +29,32 @@ Reglas de uso: registrar aquí hechos críticos, decisiones y pendientes por tar
 - ✅ Autenticación backend, roles/permisos en API, dashboard real, 11+ módulos, 3 procesos integrados, consultas con filtros, 9 reportes con exportación, validaciones FE+BE, seguridad (BCrypt, parametrizadas, soft-delete, trazabilidad).
 - ✅ **Refresh token implementado** (2026-10-25): migración `V20261026000000__create_refresh_tokens.sql`, endpoint `POST /api/v1/auth/refresh` con rotación, `POST /api/v1/auth/logout` con auditoría LOGOUT, tokens opacos hasheados (SHA-256), revocación total al cambiar/resetear contraseña, renewSession(user, ip, ua) en cambio de contraseña propio; frontend con renovación proactiva (1 min antes de expirar) + reactiva (401 INVALID_TOKEN, single-flight) en `src/lib/api/http.ts`.
 - ✅ **Catálogos con ≥5 registros** (2026-10-25): seed `S20261026000001__seed_academic_demo_data.sql` (5 categorías, 4 proveedores extra=5 total, 4 clientes extra=5 total, 5 productos nuevos con 10 presentaciones y barcodes únicos; unidades 8 de V010).
-- ✅ **3 APIs externas activas** (2026-10-25): Photon (integrada, con caché y fallback), Open Food Facts (nueva: backend + diálogo de registro rápido en el POS), Nabrix Email (contrato implementado con outbox/reintentos; activación con credenciales de prueba).
-- ✅ **Documentación completa**: `DOCUMENTO_PROYECTO.md` (+pdf, 4 págs: negocio, problema, objetivos, alcance, 6 módulos, 30 reglas, matriz de responsabilidades, procesos), `MANUAL_TECNICO.md` (+pdf), `MANUAL_USUARIO.md` (+pdf), `APIS_EXTERNAS.md`, `PUBLICACION_CLOUD.md`, `RequestMetadata.java`.
+- ✅ **3 APIs externas activas y verificadas en el código de esta copia** (2026-10-25): Photon `GET /api/v1/integrations/geocode` (Christian), Open Food Facts `GET /api/v1/products/barcode-lookup/{barcode}` + registro rápido en POS (Wilfero), tipo de cambio open.er-api.com `GET /api/v1/integrations/exchange-rate` (Fernando). Todas con caché, timeout de 4 s y manejo explícito de error (found/available=false). La integración Nabrix Email existe solo en la rama comercial `dev` y **no** forma parte de esta entrega.
+- ✅ **Documentación completa** (2026-10-25): `DOCUMENTO_PROYECTO.md` + PDF de **16 páginas** (negocio, problema, objetivos, alcance, 6 módulos, 30 reglas, diseño: modelo conceptual, modelo de datos físico, arquitectura y flujos paso a paso de los 3 procesos, matriz de responsabilidades, stack, Docker y anexos), `MANUAL_TECNICO.md` + PDF, `MANUAL_USUARIO.md` + PDF, `APIS_EXTERNAS.md`, `PUBLICACION_CLOUD.md`, `evidencias/evidencias_pruebas.md`.
+- ✅ **Arranque reproducible** (2026-10-25): `docker/compose.local.yml` con build args de `NEXT_PUBLIC_API_BASE_URL` (Next.js las inyecta en build) y autodetección de host en `src/lib/api/http.ts` (localhost/LAN → `http://<host>:8080`), de modo que el mismo compose sirve en la PC, en otra PC de la red y en un servidor con Docker.
+- ✅ **Salida de reportes** (2026-10-25): componente `components/shared/report-actions.tsx` con **Exportar CSV** (genera el CSV desde la tabla visible, respeta los filtros activos, BOM UTF-8 para Excel) e **Imprimir** (CSS `@media print` que oculta navegación), disponible en las 9 pantallas de reportes.
+- ✅ **Swagger público para revisión** (2026-10-25): `/v3/api-docs/**` y `/swagger-ui/**` en `permitAll` para que el docente consulte la documentación sin token; el resto de la API sigue autenticada.
+- ✅ **Verificación en vivo** (2026-10-25): `docker compose -f compose.local.yml up -d --build` construyó y arrancó db + backend + frontend; login, tenant-config, refresh/logout y las tres APIs externas probados contra la pila real en Docker.
+- 🐞 **Bugs reales encontrados y corregidos al probar en Docker** (2026-10-25):
+  - El refresh token emitido por `renewSession` no se persistía porque el método era `@Transactional(readOnly = true)`; el logout y la siguiente renovación devolvían `INVALID_TOKEN`. Corregido a transacción de escritura y cubierto por prueba de regresión.
+  - `refresh` lanzaba `LazyInitializationException` al usar la entidad fuera de la transacción de `consume()`. Corregido con `UserRepository.findWithAssociationsById` (`@EntityGraph` de company, branch, role, role.permissions y overrides).
+  - Los usuarios demo no tenían la contraseña documentada: `admin` estaba sembrado con `admin`. Nuevo seed `S20261026000002__reset_academic_demo_passwords.sql` (idempotente) fija `ChangeMe123!` y sube `auth_version`.
+- ✅ **Swagger/OpenAPI** (2026-10-25): se agregó `springdoc-openapi-starter-webmvc-ui` **3.2.0** (línea compatible con Spring Boot 4 / Spring Framework 7); antes la ruta `/v3/api-docs` no existía y devolvía 404/500.
+- ✅ **Las tres APIs externas verificadas en vivo** (2026-10-25 12:26 UTC, pila en Docker): Photon devolvió `Parque Barrios, Cuilapa, Santa Rosa` (14.275497, -90.298877); open.er-api.com devolvió USD→GTQ **7.645339**; Open Food Facts devolvió **Nutella** para el código 3017620422003. Los tres casos de error (query vacía, moneda inexistente, código inexistente) responden con `found=false`/`available=false` y mensaje. Evidencia en `docs/evidencias/evidencias_pruebas.md` §5.1.
+- 🐞 **Integraciones corregidas** (2026-10-25): Spring Boot 4 usa **Jackson 3**, y los servicios deserializaban con `com.fasterxml.jackson.databind.JsonNode` (Jackson 2) → `HttpMessageConversionException` y siempre "unavailable". Migrados a `tools.jackson.databind.JsonNode`. Photon rechazaba `lang=es` (solo `default/de/en/fr`): se eliminó el parámetro.
 - ⚠️ Pendiente operativo del equipo: correr `./mvnw test` en una PC con Docker Desktop (Testcontainers requiere el daemon; en la PC de desarrollo el daemon estaba apagado), smoke del despliegue en la nube (Neon/Render/Vercel) y commits de los tres integrantes.
 
 ## Pendientes por tarea
 
-1. **[Backend]** Implementar access + refresh token: endpoint `/api/v1/auth/refresh`, rotación y revocación (tabla `refresh_tokens` con expiración), invalidación al logout, renovación transparente en `src/lib/api/http.ts`, pruebas de expiración/renovación/cierre.
-2. **[DB]** Seed académico `S*__seed_academic_demo_data.sql`: ≥5 productos con presentaciones, ≥5 categorías, ≥5 proveedores, ≥5 clientes, ≥5 unidades, compras/ventas/traslados/ajustes/cierres demo suficientes para dashboard y 9 reportes.
-3. **[Backend]** APIs externas: activar nabrix-email (API key), decidir 3ª integración real (pagos sandbox Stripe/Wompi o tipo de cambio GTQ), documentar por integrante con manejo de éxito/error.
-4. **[Frontend]** Renovación automática de token + manejo de expiración/cierre de sesión.
-5. **[Docs]** Documento del proyecto (portada, negocio, problema, objetivos, alcance, 6 módulos, ≥25 reglas, matriz de responsabilidades), manual técnico, manual de usuario (ilustrado), evidencias de pruebas.
-6. **[Postman]** Colección completa por módulo con ejemplos éxito/error (incluye auth e integraciones externas).
-7. **[Publicación]** Despliegue académico: BD (Neon/Render), backend (Render/Railway), frontend (Vercel); URLs + evidencia + cuentas por rol + demo de un proceso en línea.
-8. **[Equipo]** Commits de los tres integrantes en el repo académico y defensa individual (módulos, proceso, reportes, API).
+1. **[Backend]** Implementar access + refresh token: endpoint `/api/v1/auth/refresh`, rotación y revocación (tabla `refresh_tokens` con expiración), invalidación al logout, renovación transparente en `src/lib/api/http.ts`, pruebas de expiración/renovación/cierre. ✅ Hecho (V20261026000000 + endpoints + http.ts).
+2. **[DB]** Seed académico `S*__seed_academic_demo_data.sql`: ≥5 productos con presentaciones, ≥5 categorías, ≥5 proveedores, ≥5 clientes, ≥5 unidades, compras/ventas/traslados/ajustes/cierres demo suficientes para dashboard y 9 reportes. ✅ Hecho (S20261026000001 + `database/bootstrap_demo.py` para las operaciones).
+3. **[Backend]** APIs externas por integrante con éxito/error documentado. ✅ Hecho: Photon, Open Food Facts y tipo de cambio (ver `docs/APIS_EXTERNAS.md`).
+4. **[Frontend]** Renovación automática de token + manejo de expiración/cierre de sesión. ✅ Hecho.
+5. **[Docs]** Documento del proyecto, manual técnico, manual de usuario y evidencias. ✅ Hecho (documento ampliado a 16 páginas).
+6. **[Postman]** Colección completa por módulo con ejemplos éxito/error (incluye auth e integraciones externas). ✅ Hecho.
+7. **[Publicación]** Despliegue académico: BD (Neon/Render), backend (Render/Railway), frontend (Vercel); URLs + evidencia + cuentas por rol + demo de un proceso en línea. ⏳ Pendiente (requiere cuentas del equipo; guía lista en `PUBLICACION_CLOUD.md`).
+8. **[Equipo]** Commits de los tres integrantes en el repo académico y defensa individual (módulos, proceso, reportes, API). ⏳ Pendiente.
+9. **[Verificación]** Correr `./mvnw test` con la BD de Docker arriba y hacer un smoke de `compose.local.yml` (login + tenant-config) para adjuntar evidencia real. ⏳ Pendiente: el daemon de Docker estaba apagado en la PC de desarrollo.
 
 ## Evidencias de uso del agente (asignatura)
 

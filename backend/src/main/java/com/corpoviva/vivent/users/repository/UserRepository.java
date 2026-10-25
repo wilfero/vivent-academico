@@ -83,6 +83,21 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 	})
 	Optional<UserEntity> findByIdAndCompany_IdAndDeletedAtIsNull(UUID userId, UUID companyId);
 
+	// Used by the refresh-token flow: the token service ends its transaction and
+	// the caller (AuthController -> AuthService) keeps using the detached entity,
+	// so company/branch/role must be initialized before leaving the transaction.
+	@EntityGraph(attributePaths = {
+		"company",
+		"branch",
+		"role",
+		"role.permissions",
+		"permissionOverrides",
+		"permissionOverrides.permission"
+	})
+	@Query("select user from UserEntity user where user.id = :userId")
+	Optional<UserEntity> findWithAssociationsById(@Param("userId") UUID userId);
+
+
 	boolean existsByCompany_IdAndUsernameIgnoreCaseAndDeletedAtIsNull(UUID companyId, String username);
 
 	List<UserEntity> findByCompany_IdAndIdInAndDeletedAtIsNull(UUID companyId, Collection<UUID> userIds);

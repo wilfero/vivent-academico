@@ -82,6 +82,15 @@ Si el producto no existe al escanear: el sistema consulta un **catálogo externo
 
 📷 CAPTURA 10: reporte de ventas con filtros aplicados.
 
+### 7.1 Exportar o imprimir un reporte
+
+Cada reporte tiene dos botones en la esquina superior derecha:
+
+- **Exportar CSV**: descarga la tabla tal como se ve, con los filtros aplicados (se abre en Excel y conserva los acentos).
+- **Imprimir**: abre el diálogo del navegador con la página limpia (sin menú lateral ni barra superior); desde ahí se puede imprimir o guardar como PDF.
+
+Los nueve reportes disponibles son: ventas, compras, inventario por sucursal, kardex, movimientos, productos (más vendidos, más movidos, sin movimiento, stock bajo y agotados), traslados, ajustes y cierres de caja.
+
 ## 8. Cerrar sesión
 
 Botón de **logout** en el header (o en el menú móvil). El sistema revoca tu token de renovación y regresa al login.

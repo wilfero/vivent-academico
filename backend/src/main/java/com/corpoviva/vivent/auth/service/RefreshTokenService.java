@@ -84,7 +84,7 @@ public class RefreshTokenService {
 		entity.setRevokedAt(now);
 		refreshTokenRepository.save(entity);
 
-		UserEntity user = userRepository.findById(entity.getUserId())
+		UserEntity user = userRepository.findWithAssociationsById(entity.getUserId())
 			.orElseThrow(() -> ApiException.unauthorized(ErrorCode.INVALID_TOKEN, "Refresh token user is not available"));
 
 		return user;

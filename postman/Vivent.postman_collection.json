@@ -103,6 +103,26 @@
           "name": "Lookup externo por barcode (no encontrado)",
           "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/products/barcode-lookup/0000000000000" },
           "description": "Devuelve found=false y message explicativo (éxito de API, sin producto)."
+        },
+        {
+          "name": "Geocodificación Photon (éxito)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/integrations/geocode?q=Parque%20Central%20Cuilapa" },
+          "description": "Photon: dirección -> latitud/longitud (found=true)."
+        },
+        {
+          "name": "Geocodificación Photon (error: sin dirección)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/integrations/geocode?q=" },
+          "description": "found=false con message 'Address query is required'."
+        },
+        {
+          "name": "Tipo de cambio USD->GTQ (éxito)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/integrations/exchange-rate?base=USD&target=GTQ" },
+          "description": "open.er-api.com: available=true con la tasa de referencia."
+        },
+        {
+          "name": "Tipo de cambio (error: moneda inválida)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/integrations/exchange-rate?base=USD&target=XXX" },
+          "description": "available=false con message de moneda no soportada."
         }
       ]
     },

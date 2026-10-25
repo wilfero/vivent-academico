@@ -1,7 +1,7 @@
 package com.corpoviva.vivent.barcodes.service;
 
 import com.corpoviva.vivent.barcodes.dto.BarcodeLookupResponse;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Third-party integration (student deliverable): Open Food Facts product
@@ -23,6 +25,7 @@ public class BarcodeLookupService {
 	private static final String SOURCE = "OPEN_FOOD_FACTS";
 	private static final Duration CACHE_TTL = Duration.ofMinutes(10);
 	private static final int CACHE_MAX_ENTRIES = 500;
+	private static final Logger log = LoggerFactory.getLogger(BarcodeLookupService.class);
 
 	private final RestClient restClient;
 	private final Map<String, CachedEntry> cache = new ConcurrentHashMap<>();
@@ -93,6 +96,7 @@ public class BarcodeLookupService {
 				null
 			);
 		} catch (RuntimeException exception) {
+			log.warn("Open Food Facts lookup failed for barcode '{}': {}", barcode, exception.toString());
 			return BarcodeLookupResponse.notFound(barcode, "External lookup is unavailable right now");
 		}
 	}

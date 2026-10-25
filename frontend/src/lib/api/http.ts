@@ -17,13 +17,25 @@ function isPrivateLanHostname(hostname: string) {
   );
 }
 
+function isLocalHostname(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
+
 function resolveApiBaseUrl() {
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
 
-  if (typeof window !== "undefined" && isPrivateLanHostname(window.location.hostname)) {
-    return `http://${window.location.hostname}:8080`;
+  // Local Docker / LAN usage: the backend is published on the same machine at
+  // port 8080, so derive it from the browser host when no explicit API URL is
+  // configured (e.g. http://localhost:3000 -> http://localhost:8080 and
+  // http://192.168.1.20:3000 -> http://192.168.1.20:8080).
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+
+    if (isLocalHostname(hostname) || isPrivateLanHostname(hostname)) {
+      return `http://${hostname}:8080`;
+    }
   }
 
   return DEFAULT_API_BASE_URL;

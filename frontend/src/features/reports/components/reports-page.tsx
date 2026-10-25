@@ -21,6 +21,7 @@ import { listBranches } from "@/features/admin/shared/admin-api";
 import { withSessionBranchFallback, type BranchOption } from "@/features/auth/lib/session-branch";
 import { AdminPage } from "@/features/admin/shared/admin-page";
 import { AdminTable } from "@/features/admin/shared/admin-table";
+import { ReportActions } from "@/components/shared/report-actions";
 import { listAdjustments } from "@/features/adjustments/api/adjustments-api";
 import { AdjustmentStatusBadge, AdjustmentTypeBadge, formatAdjustmentNumber } from "@/features/adjustments/components/adjustment-shared";
 import type { Adjustment, AdjustmentFilters, AdjustmentStatus } from "@/features/adjustments/types/adjustment-types";
@@ -98,7 +99,7 @@ export function CashClosingsReportPageContent() {
   const canView = canViewCashClosures();
 
   return (
-    <AdminPage title={t("reports.cashClosings.title")} description={t("reports.cashClosings.description")} eyebrow={t("navigation.reports")}>
+    <AdminPage title={t("reports.cashClosings.title")} description={t("reports.cashClosings.description")} eyebrow={t("navigation.reports")} actions={<ReportActions fileBaseName="reporte-cierres" />}>
       {canView ? <ClosuresListScreen /> : <AccessDenied />}
     </AdminPage>
   );
@@ -128,8 +129,18 @@ export function ClosureDetailPageContent({ closureId }: Readonly<{ closureId: st
 
 function ReportPage({ titleKey, descriptionKey, children }: Readonly<{ titleKey: string; descriptionKey: string; children: React.ReactNode }>) {
   const t = useTranslations();
+  const fileName = titleKey.split(".")[1] ?? "reporte";
 
-  return <AdminPage title={t(titleKey)} description={t(descriptionKey)} eyebrow={t("navigation.reports")}>{children}</AdminPage>;
+  return (
+    <AdminPage
+      title={t(titleKey)}
+      description={t(descriptionKey)}
+      eyebrow={t("navigation.reports")}
+      actions={<ReportActions fileBaseName={`reporte-${fileName}`} />}
+    >
+      {children}
+    </AdminPage>
+  );
 }
 
 function ReportsDashboardScreen() {

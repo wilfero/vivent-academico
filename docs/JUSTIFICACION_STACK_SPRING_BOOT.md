@@ -46,9 +46,9 @@ El enunciado no fija NestJS por un componente exclusivo del stack, sino como mar
 | BD | PostgreSQL | PostgreSQL 16/17 + Flyway | **Idéntico** al Stack 2 |
 | Frontend | Next.js (React, TypeScript) | Next.js 16 (React 19, TypeScript) | **Idéntico** al Stack 2 |
 | API docs | Swagger/@nestjs/swagger | springdoc-openapi (Swagger UI) | Equivalente |
-| Pruebas | Jest + Testcontainers | JUnit 5 + Testcontainers (25 pruebas contra PostgreSQL/PostGIS real) | Equivalente |
+| Pruebas | Jest + Testcontainers | JUnit 5 + pruebas de integración contra PostgreSQL real (9 casos, BUILD SUCCESS) | Equivalente |
 
-**Argumento central:** el requisito real de la asignatura es demostrar arquitectura en capas, acceso seguro a datos, autenticación con roles, validación en ambos extremos y documentación de API — todos los cuales Spring Boot 4 cumple con la misma semántica que NestJS. Reconstruir el backend en NestJS no agregaría valor académico: el sistema ya existe, tiene **25 pruebas de integración automatizadas contra PostgreSQL real**, documentación viva y un flujo de negocio completo probado, lo que permite al equipo enfocarse en los requisitos específicos del curso (refresh token, APIs externas, reportes, publicación) en lugar de reimplementar lo ya construido.
+**Argumento central:** el requisito real de la asignatura es demostrar arquitectura en capas, acceso seguro a datos, autenticación con roles, validación en ambos extremos y documentación de API — todos los cuales Spring Boot 4 cumple con la misma semántica que NestJS. Reconstruir el backend en NestJS no agregaría valor académico: el sistema ya existe, tiene **9 pruebas de integración automatizadas contra PostgreSQL real** (ejecutadas con resultado BUILD SUCCESS en esta entrega), documentación viva y un flujo de negocio completo probado, lo que permite al equipo enfocarse en los requisitos específicos del curso (refresh token, APIs externas, reportes, publicación) en lugar de reimplementar lo ya construido.
 
 ## 4. Riesgos y mitigaciones de esta propuesta
 
