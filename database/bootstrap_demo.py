@@ -180,6 +180,37 @@ def main():
     else:
         print(f"[bootstrap] purchase {purchase_number} already exists")
 
+    # ---------- segunda compra: surte cafe, papas y agua para los demas procesos ----------
+    purchase_number_2 = "ACAD-PUR-002"
+    purchase2 = find_by_number(api, admin_token, "/api/v1/purchases", purchase_number_2)
+    if purchase2 is None:
+        payload = api.post(
+            "/api/v1/purchases",
+            inventory_token,
+            body={
+                "supplierId": supplier["id"],
+                "purchaseNumber": purchase_number_2,
+                "purchaseDate": TODAY_ISO,
+                "paymentMethod": "CASH",
+                "paymentType": "CREDIT",
+                "status": "DRAFT",
+                "details": [
+                    {"presentationId": pres("cafe")["id"], "quantityPresentation": 10, "unitCostPresentation": 22.00},
+                    {"presentationId": pres("papas")["id"], "quantityPresentation": 12, "unitCostPresentation": 6.00},
+                    {"presentationId": pres("agua")["id"], "quantityPresentation": 24, "unitCostPresentation": 4.00},
+                ],
+            },
+        )
+        if not payload.get("success"):
+            raise SystemExit(f"[bootstrap] purchase create failed: {payload.get('message')}")
+        purchase2 = payload["data"]
+        confirm = api.post(f"/api/v1/purchases/{purchase2['id']}/confirm", inventory_token)
+        if not confirm.get("success"):
+            raise SystemExit(f"[bootstrap] purchase confirm failed: {confirm.get('message')}")
+        print(f"[bootstrap] purchase {purchase_number_2} created + CONFIRMED (FIFO + kardex)")
+    else:
+        print(f"[bootstrap] purchase {purchase_number_2} already exists")
+
     # ---------- proceso 2: venta POS -> FIFO -> cierre ----------
     sale_number = "ACAD-SAL-001"
     sale = find_by_number(api, admin_token, "/api/v1/sales", sale_number)
@@ -202,12 +233,20 @@ def main():
         if not payload.get("success"):
             raise SystemExit(f"[bootstrap] sale create failed: {payload.get('message')}")
         sale = payload["data"]
-        confirm = api.post(f"/api/v1/sales/{sale['id']}/confirm", manager_token)
+        # Confirming sales requires sales.create, which SELLER owns (WAREHOUSE_USER does not).
+        confirm = api.post(f"/api/v1/sales/{sale['id']}/confirm", seller_token)
         if not confirm.get("success"):
             raise SystemExit(f"[bootstrap] sale confirm failed: {confirm.get('message')}")
         print(f"[bootstrap] sale {sale_number} created + CONFIRMED (FIFO + kardex)")
     else:
         print(f"[bootstrap] sale {sale_number} already exists")
+        if sale.get("status") == "DRAFT":
+            # Heals a draft left behind by an interrupted run.
+            confirm = api.post(f"/api/v1/sales/{sale['id']}/confirm", seller_token)
+            if confirm.get("success"):
+                print(f"[bootstrap] sale {sale_number} draft confirmed")
+            else:
+                print(f"[bootstrap] warn: sale {sale_number} confirm failed: {confirm.get('message')}")
 
     # venta con descuento para el reporte de descuentos
     sale_number_2 = "ACAD-SAL-002"
@@ -215,7 +254,9 @@ def main():
     if sale2 is None:
         payload = api.post(
             "/api/v1/sales",
-            seller_token,
+            # A sale-level discount needs sales.apply_discount, which SELLER does not
+            # have; COMPANY_ADMIN does, so this discounted sale is created as admin.
+            admin_token,
             body={
                 "saleNumber": sale_number_2,
                 "saleDate": NOW_ISO,
@@ -230,7 +271,7 @@ def main():
         )
         if payload.get("success"):
             sale2 = payload["data"]
-            confirm = api.post(f"/api/v1/sales/{sale2['id']}/confirm", manager_token)
+            confirm = api.post(f"/api/v1/sales/{sale2['id']}/confirm", seller_token)
             if confirm.get("success"):
                 print(f"[bootstrap] sale {sale_number_2} created + CONFIRMED (discount + card)")
             else:
@@ -262,23 +303,45 @@ def main():
             raise SystemExit(f"[bootstrap] transfer create failed: {payload.get('message')}")
         transfer = payload["data"]
         print(f"[bootstrap] transfer {transfer_number} REQUESTED")
+    else:
+        print(f"[bootstrap] transfer {transfer_number} already exists")
 
-        for action in ("approve", "dispatch"):
-            step = api.post(f"/api/v1/transfers/{transfer['id']}/{action}", manager_token)
-            if not step.get("success"):
-                print(f"[bootstrap] warn: transfer {action} failed: {step.get('message')}")
+    # The state machine is advanced step by step so a rerun heals a transfer that
+    # stopped halfway (REQUESTED -> APPROVED -> IN_TRANSIT -> RECEIVED).
+    # approve needs transfers.approve (COMPANY_ADMIN); dispatch needs
+    # transfers.dispatch (WAREHOUSE_USER, the transfers_origin account).
+    transfer = api.get(f"/api/v1/transfers/{transfer['id']}", admin_token)["data"]
+    for expected_status, action, token in (
+        ("REQUESTED", "approve", admin_token),
+        ("APPROVED", "dispatch", manager_token),
+    ):
+        if (transfer.get("status") or "").upper() != expected_status:
+            continue
+        step = api.post(f"/api/v1/transfers/{transfer['id']}/{action}", token)
+        if not step.get("success"):
+            print(f"[bootstrap] warn: transfer {action} failed: {step.get('message')}")
+            break
+        print(f"[bootstrap] transfer {transfer_number} " + {"approve": "APPROVED", "dispatch": "DISPATCHED"}[action])
+        transfer = api.get(f"/api/v1/transfers/{transfer['id']}", admin_token)["data"]
 
+    if (transfer.get("status") or "").upper() == "IN_TRANSIT":
         receive = api.post(
             f"/api/v1/transfers/{transfer['id']}/receive",
             admin_token,
-            body={"details": [{"detailId": d["id"], "quantityReceivedBase": d.get("quantityApprovedBase", d.get("quantityRequestedBase"))} for d in transfer.get("details", [])]},
+            body={"details": [
+                {
+                    "detailId": d["id"],
+                    "quantityReceivedBase": d.get("quantityApprovedBase") or d.get("quantityRequestedBase"),
+                }
+                for d in transfer.get("details", [])
+            ]},
         )
         if receive.get("success"):
             print(f"[bootstrap] transfer {transfer_number} RECEIVED (kardex en ambas sucursales)")
         else:
             print(f"[bootstrap] warn: transfer receive failed: {receive.get('message')}")
-    else:
-        print(f"[bootstrap] transfer {transfer_number} already exists")
+    elif (transfer.get("status") or "").upper() == "RECEIVED":
+        print(f"[bootstrap] transfer {transfer_number} already RECEIVED")
 
     # ---------- ajuste con aprobación ----------
     adjustment_number = "ACAD-ADJ-001"
@@ -302,7 +365,8 @@ def main():
         )
         if payload.get("success"):
             adjustment = payload["data"]
-            approve = api.post(f"/api/v1/inventory/adjustments/{adjustment['id']}/approve", manager_token)
+            # inventory.adjust_approve belongs to COMPANY_ADMIN, not to WAREHOUSE_USER.
+            approve = api.post(f"/api/v1/inventory/adjustments/{adjustment['id']}/approve", admin_token)
             if approve.get("success"):
                 print(f"[bootstrap] adjustment {adjustment_number} APPROVED (kardex DAMAGE_OUT)")
             else:

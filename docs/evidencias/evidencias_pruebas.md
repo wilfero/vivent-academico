@@ -122,6 +122,36 @@ Los dos casos de error de red (servicio caído o timeout de 4 s) se validaron ad
 provocando la excepción en el servicio: la API responde `success=true` con
 `found=false` / `available=false` y un mensaje comprensible, sin romper el proceso del POS.
 
+### 6.1 Datos de demostración (operaciones reales, sin SQL manual)
+
+`database/bootstrap_demo.py` crea las operaciones por la **API real** para que FIFO, kardex,
+inventario y auditoría queden correctos por construcción. El script es idempotente y avanza la
+máquina de estados del traslado paso a paso, de modo que una ejecución interrumpida se puede
+retomar. Usa cada cuenta según sus permisos reales:
+
+| Paso | Cuenta | Permiso que lo autoriza |
+| --- | --- | --- |
+| Compra (crear y confirmar) | `inventory` | `purchases.create`, `purchases.confirm` |
+| Venta (crear y confirmar) | `seller` | `sales.create` |
+| Venta con descuento | `admin` | `sales.apply_discount` (el vendedor no lo tiene) |
+| Traslado (crear) | `admin` | `transfers.request` |
+| Traslado (aprobar) | `admin` | `transfers.approve` |
+| Traslado (despachar) | `transfers_origin` | `transfers.dispatch` |
+| Traslado (recibir) | `admin` | `transfers.receive` |
+| Ajuste (crear) | `inventory` | `inventory.adjust` |
+| Ajuste (aprobar) | `admin` | `inventory.adjust_approve` |
+| Cierre de caja | `seller` | `cash_closures.create` |
+
+Resultado verificado en la base (2026-10-25):
+
+```text
+purchases 2 | sales 2 | transfers 1 | adjustments 1 | stock_movements 20 | cash_closures 1
+```
+
+> Primera versión del script confirmaba la venta y aprobaba el traslado con la cuenta de bodega,
+> lo que devolvía `PERMISSION_DENIED`; se corrigió usando la cuenta que realmente tiene cada
+> permiso, que es justamente lo que la matriz de permisos exige del backend.
+
 > Bug real corregido en esta misma verificación: Spring Boot 4 usa Jackson 3 y los servicios
 > deserializaban con `com.fasterxml.jackson.databind.JsonNode` (Jackson 2), lo que producía
 > `HttpMessageConversionException` y hacía que las tres integraciones respondieran siempre
@@ -143,4 +173,6 @@ Los seeds crean catálogos con **≥5 registros cada uno** (unidades, categoría
 | 2026-10-25 12:21 | Pila completa en Docker (`up -d --build`) | Agente (Wilfero) | Contenedores db/backend/frontend arriba; healthcheck de BD en `healthy` |
 | 2026-10-25 12:22 | Smoke HTTP: login, tenant-config, refresh, logout, `/v3/api-docs`, frontend | Agente (Wilfero) | Login `COMPANY_ADMIN` con 63 permisos; refresh rota el token; logout revoca; Swagger 200; frontend 200 |
 | 2026-10-25 12:26 | Las tres APIs externas (éxito y error) | Agente (Wilfero) | Photon con coordenadas, USD→GTQ 7.645339, Nutella por código de barras; errores controlados |
+| 2026-10-25 12:41 | `python database/bootstrap_demo.py` (datos de demostración por la API real) | Agente (Wilfero) | 2 compras confirmadas (FIFO), 2 ventas confirmadas, 1 traslado recibido, 1 ajuste aprobado, **20 movimientos de kardex**, 1 cierre de caja; segunda ejecución 100 % idempotente |
+| 2026-10-25 12:42 | Reportes `sales-summary`, `purchases-summary`, `transfers-summary`, `adjustments-summary`, `cash-closures-summary` | Agente (Wilfero) | Los cinco responden `success=true` con los datos del bootstrap |
 | (pendiente) | Smoke en línea (Vercel/Render/Neon) | Equipo | 📋 registrar |
