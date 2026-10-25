@@ -176,3 +176,26 @@ Los seeds crean catálogos con **≥5 registros cada uno** (unidades, categoría
 | 2026-10-25 12:41 | `python database/bootstrap_demo.py` (datos de demostración por la API real) | Agente (Wilfero) | 2 compras confirmadas (FIFO), 2 ventas confirmadas, 1 traslado recibido, 1 ajuste aprobado, **20 movimientos de kardex**, 1 cierre de caja; segunda ejecución 100 % idempotente |
 | 2026-10-25 12:42 | Reportes `sales-summary`, `purchases-summary`, `transfers-summary`, `adjustments-summary`, `cash-closures-summary` | Agente (Wilfero) | Los cinco responden `success=true` con los datos del bootstrap |
 | (pendiente) | Smoke en línea (Vercel/Render/Neon) | Equipo | 📋 registrar |
+
+## 8. Colección Postman (CRUD completo)
+
+Colección reconstruida desde cero: `postman/Vivent.postman_collection.json` (**128 requests** en 14 carpetas) más `postman/Vivent-Local.postman_environment.json` y `postman/README.md`.
+
+La validación se ejecutó sobre una **pila aislada** (misma imagen Docker de la entrega, base de datos nueva, `bootstrap_demo.py` aplicado) para no contaminar los datos de demostración del entregable.
+
+| Fecha | Prueba | Ejecutor | Resultado |
+| --- | --- | --- | --- |
+| 2026-10-25 | 1.ª corrida `newman run Vivent.postman_collection.json -e Vivent-Local...` | Agente (Wilfero) | **128 requests, 242 aserciones, 0 fallos** (~25 s) |
+| 2026-10-25 | 2.ª corrida consecutiva sobre la misma base | Agente (Wilfero) | **128 requests, 242 aserciones, 0 fallos** (repetible gracias a `runId`) |
+
+Cobertura de la corrida: tenant público, login/refresh rotado/logout, empresa y sucursales, CRUD de categorías, unidades, productos, presentaciones, combos, proveedores y clientes, inventario (balances, capas FIFO, kardex, entradas/salidas, ajustes), compra completa (borrador → confirmar → anular), venta completa (borrador → confirmar FIFO → anular), traslado completo (solicitar → aprobar → despachar → recibir), cierre de caja (crear → aprobar → reabrir → cerrar), seis reportes, tres APIs externas y CRUD de roles y usuarios.
+
+Hallazgos corregidos gracias a esta validación:
+
+1. El environment declaraba `accessToken` vacío y **tapaba** la variable de colección → todos los requests respondían 401. Se eliminó del environment.
+2. Desactivar el registro «de trabajo» rompía la cadena posterior (producto sin categoría, compra sin proveedor) → las bajas lógicas se demuestran con **registros temporales** creados para ese fin.
+3. Los reportes no usan el mismo tipo de fecha: cuatro reciben fecha-hora ISO (`2026-10-01T00:00:00Z`) y dos reciben fecha simple (`2026-10-01`). La colección ya envía el formato correcto en cada caso.
+4. El cierre de caja es único por usuario + sucursal + día; el request calcula en un pre-request una fecha pasada libre para poder ejecutarse repetidamente.
+5. La secuencia válida del cierre es crear (CLOSED) → aprobar (APPROVED) → reabrir (REOPENED) → cerrar con monto contado.
+6. `Listar presentaciones del producto` debe ejecutarse después de crearlo, no antes.
+

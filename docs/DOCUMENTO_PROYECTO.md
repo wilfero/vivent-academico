@@ -1,41 +1,74 @@
-# Documento del proyecto — Vivent
+<style>
+.cover { page-break-after: always; text-align: center; padding-top: 14mm; }
+.cover-univ { font-size: 15pt; font-weight: 600; color: #0f2a5c; }
+.cover-fac { font-size: 12pt; color: #37507f; margin-top: 6pt; }
+.cover-title { font-size: 21pt; font-weight: 700; color: #0f2a5c; margin-top: 42pt; letter-spacing: 1px; }
+.cover-course { font-size: 12.5pt; color: #37507f; margin-top: 8pt; letter-spacing: 1px; }
+.cover-brand { font-size: 21pt; font-weight: 700; color: #0f2a5c; margin-top: 16pt; letter-spacing: 3px; }
+.cover-sub { font-size: 12.5pt; color: #37507f; margin-top: 8pt; }
+.cover-desc { font-size: 10.5pt; color: #5a6478; margin: 12pt auto 0 auto; max-width: 355pt; line-height: 1.45; }
+.cover-members-label { font-size: 10pt; color: #7a849a; margin-top: 40pt; letter-spacing: 3px; }
+.cover-member { font-size: 12pt; color: #1a2233; margin-top: 7pt; }
+.cover-date { font-size: 11pt; color: #37507f; margin-top: 46pt; }
+.cover-foot { font-size: 9pt; color: #8a93a6; margin: 22pt auto 0 auto; max-width: 470pt; line-height: 1.4; }
+</style>
 
-## Portada
+<div class="cover">
+<div class="cover-univ">UNIVERSIDAD MARIANO GÁLVEZ DE GUATEMALA</div>
+<div class="cover-fac">FACULTAD DE INGENIERÍA</div>
+<div class="cover-title">PROYECTO FINAL</div>
+<div class="cover-course">DESARROLLO WEB</div>
+<div class="cover-brand">VIVENT</div>
+<div class="cover-sub">Sistema SaaS multiempresa de gestión de inventarios</div>
+<div class="cover-desc">Documentación del proyecto: factibilidades, requerimientos, diagramas UML, modelo entidad/relación, diseño arquitectónico, diseño de componentes, diseño de interfaz y experiencia de usuario, evaluación del diseño y refactorización aplicada.</div>
+<div class="cover-members-label">I N T E G R A N T E S</div>
+<div class="cover-member">Christian Méndez</div>
+<div class="cover-member">Wilfero Delgado</div>
+<div class="cover-member">Fernando Palencia</div>
+<div class="cover-date">Guatemala, octubre de 2026</div>
+<div class="cover-foot">Versión 1 · Incluye los tres procesos integrados, las tres APIs externas y la colección Postman con CRUD completo, verificada con 128 requests y 242 aserciones sin fallos.</div>
+</div>
 
-| Dato | Detalle |
-| --- | --- |
-| Universidad | Universidad Mariano Gálvez de Guatemala — Centro Universitario Cuilapa, Santa Rosa |
-| Carrera | Ingeniería en Sistemas de Información y Ciencias de la Computación |
-| Curso | Desarrollo Web |
-| Catedrático | M.A. Ing. Elvis Morales |
-| Ciclo | Octubre 2026 |
-| Proyecto | Vivent — Sistema web SaaS multiempresa de gestión de inventarios |
-| Modalidad | Sistema web alternativo con autorización del docente; alcance funcional equivalente al ERP solicitado |
-| Integrantes | Christian Méndez · Wilfero Delgado · Fernando Palencia |
-| Repositorio académico | `https://github.com/wilfero/vivent-academico` (privado, acceso al docente) |
-| Fecha de entrega | 25 de octubre de 2026 |
-
----
+<style>
+td, th { overflow-wrap: anywhere; }
+td:first-child, th:first-child { overflow-wrap: normal; }
+td code, th code { word-break: normal; overflow-wrap: anywhere; }
+pre { white-space: pre-wrap; }
+</style>
 
 ## Índice
 
-- 1. Negocio y giro
-- 2. Problema
-- 3. Objetivos
-- 4. Alcance
-- 5. Los seis módulos del negocio
-- 6. Reglas del negocio (30)
-- 7. Diseño del sistema
-    - 7.1 Modelo conceptual
-    - 7.2 Modelo de datos físico
-    - 7.3 Arquitectura
-    - 7.4 Flujos de los tres procesos integrados
-- 8. Matriz de responsabilidades
-- 9. Stack tecnológico y equivalencia
-- 10. Repositorio, Docker y publicación
-- 11. Anexos
+| # | Sección |
+| --- | --- |
+| 1 | Negocio y giro |
+| 2 | Problema |
+| 3 | Objetivos |
+| 4 | Alcance |
+| 5 | Los seis módulos del negocio |
+| 6 | Reglas del negocio (30) |
+| 7 | Diseño del sistema |
+| 7.1 | Modelo conceptual |
+| 7.2 | Modelo de datos físico |
+| 7.3 | Arquitectura |
+| 7.4 | Flujos de los tres procesos integrados |
+| 8 | Matriz de responsabilidades |
+| 9 | Stack tecnológico y equivalencia |
+| 10 | Repositorio, Docker y publicación |
+| 11 | API, colección Postman y CRUD |
+| 11.1 | Instalación de la colección |
+| 11.2 | Variables de la colección |
+| 11.3 | Estructura de la colección |
+| 11.4 | Matriz CRUD por recurso |
+| 11.5 | Corrida encadenada de una prueba completa |
+| 11.6 | Errores controlados y resultado de la corrida |
+| 12 | Anexos |
+| 13 | Rúbrica |
 
----
+**Curso:** Desarrollo Web · **Catedrático:** M.A. Ing. Elvis Morales · **Ciclo:** octubre 2026
+
+**Repositorio académico:** `https://github.com/wilfero/vivent-academico` (privado; el docente recibe acceso) · **Entrega:** 25 de octubre de 2026
+
+<div style="page-break-after: always;"></div>
 
 ## 1. Negocio y giro
 
@@ -519,7 +552,139 @@ Crea compras, ventas con descuento, un traslado completo, un ajuste aprobado y e
 
 **Publicación en la nube:** guía en `PUBLICACION_CLOUD.md` (Neon + Render + Vercel), con evidencia de conexión y cuentas de prueba.
 
-## 11. Anexos
+## 11. API, colección Postman y CRUD
+
+La API REST de Vivent expone **132 endpoints** bajo el prefijo `/api/v1`. Todas las respuestas usan el mismo sobre (`success`, `data`, `message`, `errorCode`), la autenticación es **JWT Bearer con access token y refresh token** y cada endpoint privado vuelve a validar en el servidor: token vigente, `company_id` del token, usuario activo, suscripción habilitada, sucursal cuando aplica y el permiso `module.action` que corresponda. El frontend nunca es la única barrera.
+
+La documentación interactiva está en `http://localhost:8080/swagger-ui/index.html`. La colección Postman (`postman/Vivent.postman_collection.json`) cubre el ciclo completo con cuerpos listos para ejecutar y aserciones que verifican cada respuesta.
+
+### 11.1 Instalación de la colección
+
+1. **Importar los dos archivos** de la carpeta `postman/`: la colección y el environment `Vivent-Local.postman_environment.json`.
+2. **Seleccionar el environment** `Vivent Local` en la esquina superior derecha de Postman.
+3. **Ejecutar `01 · Autenticación → Login (guarda tokens)`**. El login escribe `accessToken`, `refreshToken`, `branchId`, `companyId` y `userId` en las variables de la colección; desde ahí el resto de requests ya viajan autenticados.
+
+Si prefiere ejecutarla sin abrir Postman:
+
+```bash
+npx newman run postman/Vivent.postman_collection.json \
+  -e postman/Vivent-Local.postman_environment.json
+```
+
+> El environment **no** declara `accessToken` a propósito: si lo declarara vacío, tendría prioridad sobre la variable de colección y todos los requests responderían 401. Es el error de configuración más común al importar colecciones.
+
+### 11.2 Variables de la colección
+
+Variables de entrada (las únicas que se editan a mano):
+
+| Variable | Valor por defecto | Para qué sirve |
+| --- | --- | --- |
+| `baseUrl` | `http://localhost:8080` | URL de la API (cámbiela al publicar en otro host). |
+| `tenantSlug` | `demo` | Subdominio de la empresa; define el tenant. |
+| `username` | `admin` | Usuario demo. |
+| `password` | `ChangeMe123!` | Contraseña demo (solo ambiente local). |
+
+Variables que se llenan solas durante la corrida:
+
+| Variable | La escribe | La consumen |
+| --- | --- | --- |
+| `accessToken`, `refreshToken` | Login y refresh | Todos los requests privados. |
+| `companyId`, `branchId`, `userId`, `roleCode` | Login | Contexto del token y permisos. |
+| `branch2Id` | `GET Sucursales` | Traslados entre sucursales. |
+| `categoryId`, `productId`, `presentationId`, `comboId` | Catálogo | Compras, ventas, traslados, ajustes. |
+| `supplierId`, `customerId` | Terceros | Compra y venta. |
+| `purchaseId`, `saleId`, `transferId`, `transferDetailId`, `adjustmentId`, `closureId` | Operaciones | Confirmar, anular, recibir, aprobar. |
+| `roleId`, `newUserId` | Roles y usuarios | Alta de usuario y perfil. |
+| `tempCategoryId`, `tempProductId`, `tempPresentationId`, `tempSupplierId` | Registros temporales | Demostrar la baja lógica sin romper la cadena. |
+| `today`, `yesterday`, `nowIso`, `closureDate` | Pre-request de la colección | Filtros de reportes y fecha del cierre. |
+| `runId` | Login | Sufijo único por corrida: nombres, SKU, códigos de barras y números de documento. |
+
+Gracias a `runId`, la colección se puede ejecutar **varias veces seguidas** sin chocar con SKU, códigos de barras o números de documento ya existentes.
+
+### 11.3 Estructura de la colección
+
+| Carpeta | Requests | Contenido |
+| --- | --- | --- |
+| 00 · Público | 1 | Configuración del tenant por subdominio (sin token). |
+| 01 · Autenticación | 5 | Login, `/auth/me`, refresh con rotación, logout y login fallido. |
+| 02 · Configuración del tenant | 6 | Empresa, sucursales y suscripción. |
+| 03 · Catálogo | 31 | Categorías, unidades, productos, presentaciones, combos y búsqueda por código de barras. |
+| 04 · Terceros | 11 | Proveedores y clientes. |
+| 05 · Inventario | 14 | Balances, capas FIFO, kardex, movimientos, entradas/salidas y ajustes. |
+| 06 · Compras | 6 | Borrador, actualización, confirmación y anulación. |
+| 07 · Ventas | 8 | CRUD del borrador, confirmación (FIFO) y anulación. |
+| 08 · Traslados | 9 | Solicitar, aprobar, despachar, recibir y cancelar. |
+| 09 · Cierres de caja | 7 | Preview, alta, aprobación, reapertura y cierre con monto contado. |
+| 10 · Reportes | 6 | Los seis reportes con filtros de fecha. |
+| 11 · Integraciones externas | 6 | Photon, Open Food Facts y tipo de cambio (éxito y error). |
+| 12 · Usuarios y permisos | 17 | Roles, usuarios, overrides y perfil propio. |
+| 13 · Auditoría | 1 | Bitácora de acciones sensibles. |
+| **Total** | **128** | Cobertura de todos los módulos del sistema. |
+
+### 11.4 Matriz CRUD por recurso
+
+Todas las rutas llevan el prefijo `/api/v1`. Ninguna entidad se borra físicamente: la columna «Baja» indica la **baja lógica** (estado o `deleted_at`) o la anulación con motivo.
+
+| Recurso | Crear | Leer | Actualizar | Baja / anulación |
+| --- | --- | --- | --- | --- |
+| Categorías | `POST /categories` | `GET /categories`, `GET /categories/{id}` | `PUT /categories/{id}` | `DELETE /categories/{id}` |
+| Unidades | `POST /product-units` | `GET /product-units` | `PUT /product-units/{code}` | `DELETE /product-units/{code}` |
+| Productos | `POST /products` | `GET /products`, `GET /products/{id}` | `PUT /products/{id}` | `DELETE /products/{id}` |
+| Presentaciones | `POST /products/{id}/presentations` | `GET /products/{id}/presentations` | `PUT /products/{id}/presentations/{pid}` | `DELETE /products/{id}/presentations/{pid}` |
+| Combos | `POST /combos` | `GET /combos`, `GET /combos/{id}`, `GET /combos/by-barcode/{barcode}` | `PUT /combos/{id}` | `DELETE /combos/{id}` |
+| Proveedores | `POST /suppliers` | `GET /suppliers`, `GET /suppliers/{id}` | `PUT /suppliers/{id}` | `DELETE /suppliers/{id}` |
+| Clientes | `POST /customers` | `GET /customers`, `GET /customers/{id}` | `PUT /customers/{id}` | `DELETE /customers/{id}` |
+| Compras | `POST /purchases` | `GET /purchases`, `GET /purchases/{id}` | `PUT /purchases/{id}` (solo DRAFT) | `POST /purchases/{id}/void` |
+| Ventas | `POST /sales` | `GET /sales`, `GET /sales/{id}` | `PUT /sales/{id}` (solo DRAFT) | `DELETE /sales/{id}`, `POST /sales/{id}/cancel` |
+| Traslados | `POST /transfers` | `GET /transfers`, `GET /transfers/{id}` | `POST /transfers/{id}/approve`, `/dispatch`, `/receive` | `POST /transfers/{id}/cancel` |
+| Ajustes | `POST /inventory/adjustments` | `GET /inventory/adjustments`, `GET /inventory/adjustments/{id}` | `PUT /inventory/adjustments/{id}` | `POST /{id}/approve`, `/reject`, `/cancel` |
+| Cierres de caja | `POST /cash-closures` | `GET /cash-closures`, `GET /cash-closures/{id}`, `GET /cash-closures/preview` | `POST /cash-closures/{id}/reopen`, `/close` | `POST /cash-closures/{id}/approve` |
+| Roles | `POST /roles` | `GET /roles`, `GET /roles/{id}`, `GET /permissions` | `PUT /roles/{id}` | — (los roles de sistema no se borran) |
+| Usuarios | `POST /users` | `GET /users`, `GET /users/{id}`, `GET /users/me` | `PUT /users/{id}`, `PUT /users/me` | `POST /users/{id}/deactivate`, `DELETE /users/{id}` |
+| Empresa y sucursales | — | `GET /companies/current`, `GET /branches` | `PUT /companies/current`, `PUT /branches/{id}` | — |
+
+Cada operación exige el permiso `module.action` del módulo correspondiente (`products.*`, `product_categories.*`, `product_presentations.*`, `units.*`, `combos.*`, `suppliers.*`, `customers.*`, `purchases.*`, `sales.*`, `transfers.*`, `inventory.adjust` y `inventory.adjust_approve`, `cash_closures.*`, `users.*`, `settings.*`). Un usuario sin el permiso recibe `403 PERMISSION_DENIED` aunque el botón exista en pantalla.
+
+### 11.5 Corrida encadenada de una prueba completa
+
+Una corrida de la colección reproduce el ciclo operativo real, en este orden:
+
+1. **Login** como `admin` → se guardan tokens e ids del contexto.
+2. **Catálogo**: categoría → producto → presentación (y combo). La presentación queda como `presentationId`.
+3. **Terceros**: proveedor y cliente nuevos.
+4. **Inventario**: entrada manual de stock y consulta de balances, capas FIFO y kardex.
+5. **Compra**: crear borrador → actualizar → confirmar. Al confirmar se crea la capa FIFO, sube la existencia y se registra kardex + auditoría.
+6. **Venta**: CRUD de un borrador (crear, leer, actualizar, eliminar) y luego una venta nueva que se confirma consumiendo FIFO y se anula devolviendo la mercadería a inventario.
+7. **Traslado**: solicitar en la sucursal 2 → aprobar (reserva stock) → despachar → recibir.
+8. **Ajuste**: crear por daño → aprobar (genera kardex de salida).
+9. **Cierre**: preview del día → crear cierre → aprobar → reabrir → cerrar con monto contado.
+10. **Reportes y auditoría**: los seis reportes con el rango de fechas y la bitácora de todo lo anterior.
+
+### 11.6 Errores controlados y resultado de la corrida
+
+La colección incluye a propósito casos de error para demostrar que el backend valida reglas, no solo el formulario. Sus aserciones esperan un 4xx y `success = false`, por lo que **no cuentan como fallo**:
+
+| Request | Respuesta esperada | Regla que demuestra |
+| --- | --- | --- |
+| Login con clave incorrecta | `401 INVALID_CREDENTIALS` | Autenticación por tenant + usuario. |
+| Refresh reutilizado | `401` | Rotación y revocación de refresh tokens. |
+| Rechazar ajuste ya aprobado | `400 INVALID_*_STATUS` | Máquina de estados del ajuste. |
+| Cancelar traslado ya recibido | `400 INVALID_TRANSFER_STATUS` | Máquina de estados del traslado. |
+| Cambiar contraseña por la misma | `400 VALIDATION_ERROR` | Política de contraseñas. |
+
+Resultado verificado de la corrida completa (ejecutada dos veces seguidas sobre la misma base para comprobar que es repetible):
+
+| Métrica | Valor |
+| --- | --- |
+| Requests ejecutados | 128 |
+| Aserciones ejecutadas | 242 |
+| Aserciones fallidas | 0 |
+| Duración aproximada | 25 s |
+| Respuesta promedio | 65 ms |
+
+Las evidencias de estas corridas están en `docs/evidencias/evidencias_pruebas.md`.
+
+## 12. Anexos
 
 **Cuentas demo** (contraseña `ChangeMe123!`, solo ambiente de prueba):
 
@@ -540,4 +705,11 @@ Crea compras, ventas con descuento, un traslado completo, un ajuste aprobado y e
 - `APIS_EXTERNAS.md` — las tres integraciones con ejemplos de éxito y error.
 - `PUBLICACION_CLOUD.md` — publicación y checklist de entrega.
 - `evidencias/evidencias_pruebas.md` — casos y resultados de pruebas.
-- Colección Postman: `postman/Vivent.postman_collection.json`.
+- `postman/Vivent.postman_collection.json` — colección con 128 requests (CRUD completo).
+- `postman/Vivent-Local.postman_environment.json` — environment con URL y credenciales demo.
+- `postman/README.md` — instalación, orden de ejecución y tabla de variables.
+
+---
+
+**13. Rúbrica.** La hoja original de la rúbrica del curso se adjunta al final de este documento, tal como la entrega el catedrático.
+
